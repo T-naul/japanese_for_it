@@ -1,0 +1,19 @@
+services:
+  front:
+    build:
+      context: ./jfi-front
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./jfi-front:/app
+      - /app/node_modules
+
+  back:
+    build:
+      context: ./jfi-back
+    ports:
+      - "7000:7000"
+    volumes:
+      - ./jfi-back:/app
+    env_file:
+    - ./jfi-back/.env
