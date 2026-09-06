@@ -1,0 +1,100 @@
+{% extends "admin/base_site.html" %}
+
+{% block content %}
+
+<div id="content-main">
+
+    <h1>Import Center</h1>
+
+    <p>
+        Import Vocabulary hoặc Grammar
+        từ CSV, XLSX hoặc JSON.
+    </p>
+
+    <form
+        method="post"
+        enctype="multipart/form-data"
+    >
+
+        {% csrf_token %}
+
+        {{ form.as_p }}
+
+        <div class="submit-row">
+            <input
+                type="submit"
+                value="Import"
+                class="default"
+            >
+        </div>
+
+    </form>
+
+    {% if result %}
+
+        <hr>
+
+        <h2>Import Result</h2>
+
+        <table>
+            <tbody>
+                <tr>
+                    <th>Total</th>
+                    <td>{{ result.total }}</td>
+                </tr>
+
+                <tr>
+                    <th>Imported</th>
+                    <td>{{ result.imported }}</td>
+                </tr>
+
+                <tr>
+                    <th>Skipped</th>
+                    <td>{{ result.skipped }}</td>
+                </tr>
+
+                <tr>
+                    <th>Failed</th>
+                    <td>{{ result.failed }}</td>
+                </tr>
+            </tbody>
+        </table>
+
+        {% if result.errors %}
+
+            <h2>Errors</h2>
+
+            <table class="adminlist">
+                <thead>
+                    <tr>
+                        <th>Row</th>
+                        <th>Error</th>
+                    </tr>
+                </thead>
+
+                <tbody>
+
+                    {% for error in result.errors %}
+
+                        <tr>
+                            <td>
+                                {{ error.row }}
+                            </td>
+
+                            <td>
+                                {{ error.message }}
+                            </td>
+                        </tr>
+
+                    {% endfor %}
+
+                </tbody>
+            </table>
+
+        {% endif %}
+
+    {% endif %}
+
+</div>
+
+{% endblock %}
