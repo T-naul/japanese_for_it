@@ -114,10 +114,6 @@ class DayVocabulary(models.Model):
         related_name="study_plan_days",
     )
 
-    # is_carry_over = models.BooleanField(
-    #     default=False,
-    # )
-
     created_at = models.DateTimeField(
         auto_now_add=True,
     )
@@ -154,10 +150,6 @@ class DayGrammar(models.Model):
         on_delete=models.CASCADE,
         related_name="study_plan_days",
     )
-
-    # is_carry_over = models.BooleanField(
-    #     default=False,
-    # )
 
     created_at = models.DateTimeField(
         auto_now_add=True,

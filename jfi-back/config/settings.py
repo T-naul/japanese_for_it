@@ -11,6 +11,7 @@ https://docs.djangoproject.com/en/5.0/ref/settings/
 """
 
 from pathlib import Path
+# pyrefly: ignore [missing-import]
 import environ
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -68,6 +69,11 @@ INSTALLED_APPS = [
     'apps.learning',
     'apps.content',
 ]
+
+REST_FRAMEWORK = {
+    "DEFAULT_PAGINATION_CLASS": "apps.content.pagination.StandardResultsSetPagination",
+    "PAGE_SIZE": 10,
+}
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
@@ -158,3 +164,4 @@ STATIC_URL = 'static/'
 # https://docs.djangoproject.com/en/5.0/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+CORS_ALLOWED_ORIGINS = [ "http://localhost:3000", ] 

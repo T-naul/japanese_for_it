@@ -1,3 +1,4 @@
+# pyrefly: ignore [missing-import]
 from django.db import models
 
 import uuid
@@ -19,21 +20,26 @@ class ContentStatus(models.TextChoices):
 
 class WordType(models.TextChoices):
     NOUN = "noun", "Danh từ"
-    VERB = "verb", "Động từ"
+    VERB_1 = "verb_1", "Động từ nhóm 1"
+    VERB_2 = "verb_2", "Động từ nhóm 2"
+    VERB_3 = "verb_3", "Động từ nhóm 3"
     ADJECTIVE = "adjective", "Tính từ"
 
 
 class VerbFormType(models.TextChoices):
-    DICTIONARY = "dictionary", "Dictionary"
-    MASU = "masu", "ます形"
-    NAI = "nai", "ない形"
+    SURU = "suru", "辞書"
+    MASU = "masu", "丁寧"
+    NAI = "nai", "未然"
     TA = "ta", "た形"
     TE = "te", "て形"
-    NAKATTA = "nakatta", "なかった形"
-    POTENTIAL = "potential", "可能形"
-    PASSIVE = "passive", "受身形"
-    CAUSATIVE = "causative", "使役形"
-    IMPERATIVE = "imperative", "命令形"
+    KANO = "kano", "可能"
+    UKEMI = "ukemi", "受身"
+    SHIEKI = "shieki", "使役"
+    SHIEKI_UKEMI = "shieki_ukemi", "使役受身"
+    IMPERATIVE = "imperative", "命令"
+    IKOU = "ikou", "意向"
+    KENSHI = "kenshi", "禁止"
+    JIOUKEN = "jiouken", "条件"
 
 
 class Source(models.Model):
