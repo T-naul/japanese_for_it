@@ -27,6 +27,7 @@ class VocabularyViewSet(viewsets.ModelViewSet):
 
     filter_backends = [
         DjangoFilterBackend,
+        filters.SearchFilter,
     ]
     filterset_fields = [
         "level",
@@ -59,6 +60,7 @@ class GrammarViewSet(viewsets.ModelViewSet):
     # ]
     filter_backends = [
         DjangoFilterBackend,
+        filters.SearchFilter,
     ]
     filterset_fields = [
         "level",
@@ -79,6 +81,7 @@ class SourceViewSet(viewsets.ModelViewSet):
     # ]
     filter_backends = [
         DjangoFilterBackend,
+        filters.SearchFilter,
     ]
     search_fields = [
         "name",

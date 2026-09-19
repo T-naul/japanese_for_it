@@ -82,6 +82,7 @@ export default function VocabulariesPage() {
   const [levelFilter, setLevelFilter] = useState<string>('ALL');
   const [typeFilter, setTypeFilter] = useState<string>('ALL');
   const [statusFilter, setStatusFilter] = useState<string>('ALL');
+  const [debouncedSearch, setDebouncedSearch] = useState("");
 
   // Modal States
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -108,7 +109,7 @@ export default function VocabulariesPage() {
         contentApi.getVocabularies({
           page,
           page_size: pageSize,
-          search,
+          search: debouncedSearch,
           level: levelFilter,
           word_type: typeFilter,
           status: statusFilter,
@@ -126,8 +127,17 @@ export default function VocabulariesPage() {
   };
 
   useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearch(search);
+      setPage(1);
+    }, 400); // chờ 400ms sau khi ngừng gõ mới gọi API
+
+    return () => clearTimeout(timer); // hủy timer cũ nếu người dùng gõ tiếp
+  }, [search]);
+
+  useEffect(() => {
     loadData();
-  }, [page, pageSize, search, levelFilter, typeFilter, statusFilter]);
+  }, [page, pageSize, debouncedSearch, levelFilter, typeFilter, statusFilter]);
 
   const openCreateModal = () => {
     setEditingItem(null);
@@ -434,9 +444,8 @@ export default function VocabulariesPage() {
 
                       <td className="px-6 py-4 whitespace-nowrap">
                         <span
-                          className={`inline-flex items-center text-xs font-semibold px-2.5 py-1 rounded-full border whitespace-nowrap ${
-                            STATUS_LABELS[item.status]?.color || 'bg-slate-800 text-slate-300'
-                          }`}
+                          className={`inline-flex items-center text-xs font-semibold px-2.5 py-1 rounded-full border whitespace-nowrap ${STATUS_LABELS[item.status]?.color || 'bg-slate-800 text-slate-300'
+                            }`}
                         >
                           {STATUS_LABELS[item.status]?.label || item.status}
                         </span>
@@ -677,17 +686,16 @@ export default function VocabulariesPage() {
                           </label>
                           <input
                             type="text"
-                            placeholder={`VD: ${
-                              typeKey === 'masu'
-                                ? '実装します'
-                                : typeKey === 'nai'
+                            placeholder={`VD: ${typeKey === 'masu'
+                              ? '実装します'
+                              : typeKey === 'nai'
                                 ? '実装しない'
                                 : typeKey === 'ta'
-                                ? '実装した'
-                                : typeKey === 'te'
-                                ? '実装して'
-                                : 'Nhập giá trị...'
-                            }`}
+                                  ? '実装した'
+                                  : typeKey === 'te'
+                                    ? '実装して'
+                                    : 'Nhập giá trị...'
+                              }`}
                             value={verbFormsMap[typeKey] || ''}
                             onChange={(e) =>
                               setVerbFormsMap((prev) => ({
