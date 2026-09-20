@@ -8,6 +8,7 @@ import {
   VocabularyQueryParams,
   GrammarQueryParams,
   SourceQueryParams,
+  ImportResult,
 } from '@/types';
 
 const API_BASE_URL =
@@ -398,4 +399,50 @@ export const contentApi = {
       await contentApi.updateGrammar(id, { status });
     }
   },
+
+  // ---------------- File Import API ----------------
+  importVocabularies: async (file: File): Promise<ImportResult> => {
+    const formData = new FormData();
+    formData.append('file', file);
+    try {
+      const res = await apiClient.post<ImportResult>('/vocabularies/import_file/', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+        timeout: 120000,
+      });
+      return res.data;
+    } catch (err: any) {
+      if (err.response?.data) {
+        if (typeof err.response.data === 'string') {
+          throw new Error(err.response.data);
+        }
+        throw new Error(err.response.data.error || JSON.stringify(err.response.data));
+      }
+      throw err;
+    }
+  },
+
+  importGrammars: async (file: File): Promise<ImportResult> => {
+    const formData = new FormData();
+    formData.append('file', file);
+    try {
+      const res = await apiClient.post<ImportResult>('/grammars/import_file/', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+        timeout: 120000,
+      });
+      return res.data;
+    } catch (err: any) {
+      if (err.response?.data) {
+        if (typeof err.response.data === 'string') {
+          throw new Error(err.response.data);
+        }
+        throw new Error(err.response.data.error || JSON.stringify(err.response.data));
+      }
+      throw err;
+    }
+  },
 };
+

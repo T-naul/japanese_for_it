@@ -10,6 +10,7 @@ import {
   ContentStatus,
   STATUS_LABELS,
 } from '@/types';
+import FileImportModal from '@/components/admin/FileImportModal';
 import {
   Plus,
   Search,
@@ -20,7 +21,9 @@ import {
   BookmarkCheck,
   ChevronLeft,
   ChevronRight,
+  Upload,
 } from 'lucide-react';
+
 
 export default function GrammarsPage() {
   const [grammars, setGrammars] = useState<Grammar[]>([]);
@@ -38,12 +41,15 @@ export default function GrammarsPage() {
 
   // Modal States
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isImportModalOpen, setIsImportModalOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<Grammar | null>(null);
+
 
   // Form Fields
   const [pattern, setPattern] = useState('');
   const [meaning, setMeaning] = useState('');
   const [level, setLevel] = useState<JLPTLevel>('N3');
+  const [explanation, setExplanation] = useState('');
   const [example, setExample] = useState('');
   const [status, setStatus] = useState<ContentStatus>('upload');
   const [selectedSources, setSelectedSources] = useState<string[]>([]);
@@ -81,6 +87,7 @@ export default function GrammarsPage() {
     setPattern('');
     setMeaning('');
     setLevel('N3');
+    setExplanation('');
     setExample('');
     setStatus('upload');
     setSelectedSources([]);
@@ -97,6 +104,7 @@ export default function GrammarsPage() {
       setPattern(detail.pattern);
       setMeaning(detail.meaning);
       setLevel(detail.level);
+      setExplanation(detail.explanation || '');
       setExample(detail.example || '');
       setStatus(detail.status);
       setSelectedSources(detail.sources || []);
@@ -104,6 +112,7 @@ export default function GrammarsPage() {
       setPattern(item.pattern);
       setMeaning(item.meaning);
       setLevel(item.level);
+      setExplanation(item.explanation || '');
       setExample(item.example || '');
       setStatus(item.status);
       setSelectedSources(item.sources || []);
@@ -127,6 +136,7 @@ export default function GrammarsPage() {
           pattern,
           meaning,
           level,
+          explanation,
           example,
           status,
           sources: selectedSources,
@@ -136,6 +146,7 @@ export default function GrammarsPage() {
           pattern,
           meaning,
           level,
+          explanation,
           example,
           status,
           sources: selectedSources,
@@ -174,14 +185,24 @@ export default function GrammarsPage() {
               Quản lý các cấu trúc mẫu câu ngữ pháp Tiếng Nhật.
             </p>
           </div>
-          <button
-            onClick={openCreateModal}
-            className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-violet-600 hover:bg-violet-500 text-white font-semibold text-sm shadow-lg shadow-violet-600/30 transition hover:-translate-y-0.5"
-          >
-            <Plus className="w-4 h-4" />
-            Thêm Ngữ Pháp Mới
-          </button>
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => setIsImportModalOpen(true)}
+              className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-violet-300 font-semibold text-sm border border-slate-700 shadow-md transition hover:-translate-y-0.5"
+            >
+              <Upload className="w-4 h-4" />
+              Import Từ File
+            </button>
+            <button
+              onClick={openCreateModal}
+              className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-violet-600 hover:bg-violet-500 text-white font-semibold text-sm shadow-lg shadow-violet-600/30 transition hover:-translate-y-0.5"
+            >
+              <Plus className="w-4 h-4" />
+              Thêm Ngữ Pháp Mới
+            </button>
+          </div>
         </div>
+
 
         {/* Search & Filters Bar */}
         <div className="p-4 rounded-2xl bg-slate-900/90 border border-slate-800 space-y-3 md:space-y-0 md:flex md:items-center md:gap-4">
@@ -285,9 +306,8 @@ export default function GrammarsPage() {
 
                       <td className="px-6 py-4 whitespace-nowrap">
                         <span
-                          className={`inline-flex items-center text-xs font-semibold px-2.5 py-1 rounded-full border whitespace-nowrap ${
-                            STATUS_LABELS[item.status]?.color || 'bg-slate-800 text-slate-300'
-                          }`}
+                          className={`inline-flex items-center text-xs font-semibold px-2.5 py-1 rounded-full border whitespace-nowrap ${STATUS_LABELS[item.status]?.color || 'bg-slate-800 text-slate-300'
+                            }`}
                         >
                           {STATUS_LABELS[item.status]?.label || item.status}
                         </span>
@@ -520,7 +540,33 @@ export default function GrammarsPage() {
             </div>
           </div>
         )}
+
+        {/* File Import Modal */}
+        <FileImportModal
+          isOpen={isImportModalOpen}
+          onClose={() => setIsImportModalOpen(false)}
+          title="Import Ngữ Pháp Từ File"
+          description="Tải lên file định dạng .json, .csv, hoặc .xlsx để thêm mẫu ngữ pháp mới hàng loạt."
+          onUpload={(file) => contentApi.importGrammars(file)}
+          onSuccess={() => loadData()}
+          sampleInfo={{
+            filenamePrefix: 'grammars',
+            headers: ['pattern', 'meaning', 'level', 'status', 'example'],
+            exampleJson: [
+              {
+                pattern: '～に沿って',
+                meaning: 'Tuân theo / Dựa theo tài liệu thiết kế',
+                level: 'N3',
+                status: 'upload',
+                example: '設計書に沿ってコードを作成してください。',
+              },
+            ],
+            exampleCsv:
+              'pattern,meaning,level,status,example\n～に沿って,Tuân theo / Dựa theo tài liệu thiết kế,N3,upload,設計書に沿ってコードを作成してください。\n～に基づいて,Dựa trên cơ sở,N2,upload,要件定義書に基づいてデータベースを設計します。',
+          }}
+        />
       </div>
     </AdminLayout>
   );
 }
+

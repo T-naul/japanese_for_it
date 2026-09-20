@@ -115,6 +115,7 @@ export interface Grammar {
   pattern: string;
   meaning: string;
   level: JLPTLevel;
+  explanation: string;
   example: string;
   sources?: string[];
   status: ContentStatus;
@@ -122,3 +123,18 @@ export interface Grammar {
   created_at: string;
   updated_at: string;
 }
+
+export interface ImportError {
+  row: number;
+  kanji?: string;
+  pattern?: string;
+  errors: string[];
+}
+
+export interface ImportResult {
+  total_rows: number;
+  created_count: number;
+  error_count: number;
+  errors: ImportError[];
+}
+

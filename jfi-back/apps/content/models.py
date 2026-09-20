@@ -177,6 +177,8 @@ class Grammar(models.Model):
 
     meaning = models.TextField()
 
+    explanation = models.TextField(default="", blank=True)
+
     level = models.CharField(
         max_length=2,
         choices=JLPTLevel.choices,

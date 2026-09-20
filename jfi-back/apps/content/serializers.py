@@ -250,6 +250,7 @@ class GrammarSerializer(
             "meaning",
             "level",
             "example",
+            "explanation",
             "sources",
             "status",
             "version",
@@ -292,3 +293,20 @@ class GrammarSerializer(
             data=validated_data,
             sources=sources,
         )
+
+
+class FileImportSerializer(serializers.Serializer):
+    file = serializers.FileField(required=True)
+
+    def validate_file(self, value):
+        name = value.name.lower()
+        if not (
+            name.endswith(".json")
+            or name.endswith(".csv")
+            or name.endswith(".xlsx")
+            or name.endswith(".xls")
+        ):
+            raise serializers.ValidationError(
+                "Chỉ hỗ trợ tải lên file có định dạng .json, .csv, hoặc .xlsx."
+            )
+        return value

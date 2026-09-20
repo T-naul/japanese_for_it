@@ -15,6 +15,7 @@ import {
   WORD_TYPE_LABELS,
   STATUS_LABELS,
 } from '@/types';
+import FileImportModal from '@/components/admin/FileImportModal';
 import {
   Plus,
   Search,
@@ -25,7 +26,9 @@ import {
   Sparkles,
   ChevronLeft,
   ChevronRight,
+  Upload,
 } from 'lucide-react';
+
 
 const ALL_VERB_FORM_TYPES: VerbFormType[] = [
   'suru',
@@ -86,8 +89,10 @@ export default function VocabulariesPage() {
 
   // Modal States
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isImportModalOpen, setIsImportModalOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<Vocabulary | null>(null);
   const [viewingItem, setViewingItem] = useState<Vocabulary | null>(null);
+
 
   // Form Fields
   const [kanji, setKanji] = useState('');
@@ -294,14 +299,24 @@ export default function VocabulariesPage() {
               Quản lý danh sách từ vựng tiếng Nhật, chia thể động từ và từ đồng nghĩa.
             </p>
           </div>
-          <button
-            onClick={openCreateModal}
-            className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-sm shadow-lg shadow-indigo-600/30 transition hover:-translate-y-0.5"
-          >
-            <Plus className="w-4 h-4" />
-            Thêm Từ Vựng Mới
-          </button>
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => setIsImportModalOpen(true)}
+              className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-indigo-300 font-semibold text-sm border border-slate-700 shadow-md transition hover:-translate-y-0.5"
+            >
+              <Upload className="w-4 h-4" />
+              Import Từ File
+            </button>
+            <button
+              onClick={openCreateModal}
+              className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-sm shadow-lg shadow-indigo-600/30 transition hover:-translate-y-0.5"
+            >
+              <Plus className="w-4 h-4" />
+              Thêm Từ Vựng Mới
+            </button>
+          </div>
         </div>
+
 
         {/* Search & Filters Bar */}
         <div className="p-4 rounded-2xl bg-slate-900/90 border border-slate-800 space-y-3 md:space-y-0 md:flex md:items-center md:gap-4">
@@ -854,7 +869,40 @@ export default function VocabulariesPage() {
             </div>
           </div>
         )}
+
+        {/* File Import Modal */}
+        <FileImportModal
+          isOpen={isImportModalOpen}
+          onClose={() => setIsImportModalOpen(false)}
+          title="Import Từ Vựng Từ File"
+          description="Tải lên file định dạng .json, .csv, hoặc .xlsx để thêm từ vựng mới hàng loạt."
+          onUpload={(file) => contentApi.importVocabularies(file)}
+          onSuccess={() => loadData()}
+          sampleInfo={{
+            filenamePrefix: 'vocabularies',
+            headers: ['kanji', 'hiragana', 'meaning', 'han_viet', 'word_type', 'level', 'status', 'example', 'forms'],
+            exampleJson: [
+              {
+                kanji: '実装する',
+                hiragana: 'じっそうする',
+                meaning: 'Lập trình cài đặt chức năng hệ thống',
+                han_viet: 'Thực trang',
+                word_type: 'verb_3',
+                level: 'N3',
+                status: 'upload',
+                example: '仕様書に基づいてAPIを実装します。',
+                forms: [
+                  { form_type: 'masu', value: '実装します' },
+                  { form_type: 'nai', value: '実装しない' },
+                ],
+              },
+            ],
+            exampleCsv:
+              'kanji,hiragana,meaning,han_viet,word_type,level,status,example\n実装する,じっそうする,Lập trình cài đặt chức năng,Thực trang,verb_3,N3,upload,仕様書に基づいてAPIを実装します。\n開発する,かいはつする,Phát triển hệ thống,Khai phát,verb_3,N3,upload,新機能を開発します。',
+          }}
+        />
       </div>
     </AdminLayout>
   );
 }
+
