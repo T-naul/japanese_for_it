@@ -104,26 +104,31 @@ export default function VocabulariesPage() {
   const [example, setExample] = useState('');
   const [status, setStatus] = useState<ContentStatus>('upload');
   const [selectedSources, setSelectedSources] = useState<string[]>([]);
+  const [selectedSynonyms, setSelectedSynonyms] = useState<string[]>([]);
+  const [synonymSearch, setSynonymSearch] = useState('');
   const [verbFormsMap, setVerbFormsMap] = useState<Record<VerbFormType, string>>(DEFAULT_VERB_FORMS_MAP);
   const [formError, setFormError] = useState<string | null>(null);
+
+  // Load static sources list ONCE on mount
+  useEffect(() => {
+    contentApi.getSources().then((sRes) => {
+      setSources(sRes.results || []);
+    }).catch((err) => console.error('Error loading sources:', err));
+  }, []);
 
   const loadData = async () => {
     try {
       setLoading(true);
-      const [vRes, sRes] = await Promise.all([
-        contentApi.getVocabularies({
-          page,
-          page_size: pageSize,
-          search: debouncedSearch,
-          level: levelFilter,
-          word_type: typeFilter,
-          status: statusFilter,
-        }),
-        contentApi.getSources(),
-      ]);
+      const vRes = await contentApi.getVocabularies({
+        page,
+        page_size: pageSize,
+        search: debouncedSearch,
+        level: levelFilter,
+        word_type: typeFilter,
+        status: statusFilter,
+      });
       setVocabularies(vRes.results);
       setTotalItems(vRes.count);
-      setSources(sRes.results || []);
     } catch (err) {
       console.error('Error loading vocabularies:', err);
     } finally {
@@ -133,8 +138,13 @@ export default function VocabulariesPage() {
 
   useEffect(() => {
     const timer = setTimeout(() => {
-      setDebouncedSearch(search);
-      setPage(1);
+      setDebouncedSearch((prev) => {
+        if (prev !== search) {
+          setPage(1);
+          return search;
+        }
+        return prev;
+      });
     }, 400); // chờ 400ms sau khi ngừng gõ mới gọi API
 
     return () => clearTimeout(timer); // hủy timer cũ nếu người dùng gõ tiếp
@@ -155,6 +165,8 @@ export default function VocabulariesPage() {
     setExample('');
     setStatus('upload');
     setSelectedSources([]);
+    setSelectedSynonyms([]);
+    setSynonymSearch('');
     setVerbFormsMap({ ...DEFAULT_VERB_FORMS_MAP });
     setFormError(null);
     setIsModalOpen(true);
@@ -175,6 +187,8 @@ export default function VocabulariesPage() {
       setExample(detail.example || '');
       setStatus(detail.status);
       setSelectedSources(detail.sources || []);
+      setSelectedSynonyms(detail.synonyms || []);
+      setSynonymSearch('');
 
       const newMap: Record<VerbFormType, string> = { ...DEFAULT_VERB_FORMS_MAP };
       if (detail.forms) {
@@ -195,6 +209,8 @@ export default function VocabulariesPage() {
       setExample(item.example || '');
       setStatus(item.status);
       setSelectedSources(item.sources || []);
+      setSelectedSynonyms(item.synonyms || []);
+      setSynonymSearch('');
 
       const newMap: Record<VerbFormType, string> = { ...DEFAULT_VERB_FORMS_MAP };
       if (item.forms) {
@@ -250,6 +266,7 @@ export default function VocabulariesPage() {
           example,
           status,
           sources: selectedSources,
+          synonyms: selectedSynonyms,
           forms: isVerb(wordType) ? validForms : [],
         });
       } else {
@@ -263,6 +280,7 @@ export default function VocabulariesPage() {
           example,
           status,
           sources: selectedSources,
+          synonyms: selectedSynonyms,
           forms: isVerb(wordType) ? validForms : [],
         });
       }
@@ -730,6 +748,99 @@ export default function VocabulariesPage() {
                   </div>
                 )}
 
+                {/* Synonyms Selector */}
+                <div>
+                  <label className="block text-xs font-semibold text-slate-400 mb-1">
+                    Từ Đồng Nghĩa (Synonyms)
+                  </label>
+
+                  {/* Selected Synonyms Tags */}
+                  {selectedSynonyms.length > 0 && (
+                    <div className="flex flex-wrap gap-1.5 p-2 mb-2 rounded-xl bg-slate-950 border border-slate-800">
+                      {selectedSynonyms.map((synId) => {
+                        const found = vocabularies.find((v) => v.id === synId);
+                        return (
+                          <span
+                            key={synId}
+                            className="px-2.5 py-1 rounded-lg bg-indigo-600/20 text-indigo-300 border border-indigo-500/30 text-xs flex items-center gap-1.5"
+                          >
+                            <span>{found ? `${found.kanji} (${found.hiragana})` : synId}</span>
+                            <button
+                              type="button"
+                              onClick={() =>
+                                setSelectedSynonyms(selectedSynonyms.filter((id) => id !== synId))
+                              }
+                              className="hover:text-rose-400 transition"
+                            >
+                              <X className="w-3.5 h-3.5" />
+                            </button>
+                          </span>
+                        );
+                      })}
+                    </div>
+                  )}
+
+                  {/* Synonyms Search & Candidate Picker */}
+                  <div className="space-y-2">
+                    <input
+                      type="text"
+                      placeholder="Gõ để tìm từ đồng nghĩa theo Kanji / Hiragana / Ý nghĩa..."
+                      value={synonymSearch}
+                      onChange={(e) => setSynonymSearch(e.target.value)}
+                      className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-slate-100 text-xs placeholder-slate-500 focus:outline-none focus:border-indigo-500"
+                    />
+
+                    {synonymSearch.trim() !== '' && (
+                      <div className="max-h-36 overflow-y-auto rounded-xl bg-slate-950 border border-slate-800 divide-y divide-slate-800/60 p-1">
+                        {vocabularies
+                          .filter(
+                            (v) =>
+                              v.id !== editingItem?.id &&
+                              (v.kanji.toLowerCase().includes(synonymSearch.toLowerCase()) ||
+                                v.hiragana.toLowerCase().includes(synonymSearch.toLowerCase()) ||
+                                v.meaning.toLowerCase().includes(synonymSearch.toLowerCase()))
+                          )
+                          .slice(0, 10)
+                          .map((v) => {
+                            const isSelected = selectedSynonyms.includes(v.id);
+                            return (
+                              <div
+                                key={v.id}
+                                onClick={() => {
+                                  if (isSelected) {
+                                    setSelectedSynonyms(
+                                      selectedSynonyms.filter((id) => id !== v.id)
+                                    );
+                                  } else {
+                                    setSelectedSynonyms([...selectedSynonyms, v.id]);
+                                  }
+                                }}
+                                className={`p-2 text-xs rounded-lg cursor-pointer flex items-center justify-between transition ${
+                                  isSelected
+                                    ? 'bg-indigo-600/20 text-indigo-300'
+                                    : 'hover:bg-slate-900 text-slate-300'
+                                }`}
+                              >
+                                <div>
+                                  <span className="font-bold text-white mr-2">{v.kanji}</span>
+                                  <span className="text-slate-400 font-mono text-[11px]">
+                                    {v.hiragana}
+                                  </span>
+                                  <span className="text-slate-500 ml-2 text-[11px] truncate max-w-[200px]">
+                                    - {v.meaning}
+                                  </span>
+                                </div>
+                                <span className="text-[11px] font-semibold">
+                                  {isSelected ? '✓ Đã chọn' : '+ Chọn'}
+                                </span>
+                              </div>
+                            );
+                          })}
+                      </div>
+                    )}
+                  </div>
+                </div>
+
                 {/* Sources Selector */}
                 <div>
                   <label className="block text-xs font-semibold text-slate-400 mb-1">
@@ -853,6 +964,49 @@ export default function VocabulariesPage() {
                           <span className="font-semibold text-indigo-300">{f.value}</span>
                         </div>
                       ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Synonyms List */}
+                {((viewingItem.synonyms_detail && viewingItem.synonyms_detail.length > 0) ||
+                  (viewingItem.synonyms && viewingItem.synonyms.length > 0)) && (
+                  <div>
+                    <span className="text-xs font-semibold text-indigo-400">Từ đồng nghĩa:</span>
+                    <div className="flex flex-wrap gap-2 mt-1.5">
+                      {viewingItem.synonyms_detail && viewingItem.synonyms_detail.length > 0
+                        ? viewingItem.synonyms_detail.map((syn) => (
+                            <div
+                              key={syn.id}
+                              className="px-2.5 py-1.5 rounded-lg bg-slate-950 border border-indigo-500/20 text-xs space-x-1.5"
+                            >
+                              <span className="font-bold text-white">{syn.kanji}</span>
+                              <span className="text-indigo-300 font-mono text-[11px]">
+                                ({syn.hiragana})
+                              </span>
+                              {syn.meaning && (
+                                <span className="text-slate-400 text-[11px]">- {syn.meaning}</span>
+                              )}
+                            </div>
+                          ))
+                        : viewingItem.synonyms?.map((synId) => {
+                            const found = vocabularies.find((v) => v.id === synId);
+                            return (
+                              <div
+                                key={synId}
+                                className="px-2.5 py-1.5 rounded-lg bg-slate-950 border border-slate-800 text-xs space-x-1.5"
+                              >
+                                <span className="font-bold text-white">
+                                  {found ? found.kanji : synId}
+                                </span>
+                                {found && (
+                                  <span className="text-indigo-300 font-mono text-[11px]">
+                                    ({found.hiragana})
+                                  </span>
+                                )}
+                              </div>
+                            );
+                          })}
                     </div>
                   </div>
                 )}

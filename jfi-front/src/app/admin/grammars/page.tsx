@@ -54,23 +54,42 @@ export default function GrammarsPage() {
   const [status, setStatus] = useState<ContentStatus>('upload');
   const [selectedSources, setSelectedSources] = useState<string[]>([]);
   const [formError, setFormError] = useState<string | null>(null);
+  const [debouncedSearch, setDebouncedSearch] = useState('');
+
+  // Load static sources list ONCE on mount
+  useEffect(() => {
+    contentApi.getSources().then((sData) => {
+      setSources(sData.results || []);
+    }).catch((err) => console.error('Error loading sources:', err));
+  }, []);
+
+  // Debounce search input to avoid redundant requests while typing
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearch((prev) => {
+        if (prev !== search) {
+          setPage(1);
+          return search;
+        }
+        return prev;
+      });
+    }, 400);
+
+    return () => clearTimeout(timer);
+  }, [search]);
 
   const loadData = async () => {
     try {
       setLoading(true);
-      const [gData, sData] = await Promise.all([
-        contentApi.getGrammars({
-          page,
-          page_size: pageSize,
-          search,
-          level: levelFilter,
-          status: statusFilter,
-        }),
-        contentApi.getSources(),
-      ]);
+      const gData = await contentApi.getGrammars({
+        page,
+        page_size: pageSize,
+        search: debouncedSearch,
+        level: levelFilter,
+        status: statusFilter,
+      });
       setGrammars(gData.results);
       setTotalItems(gData.count);
-      setSources(sData.results || []);
     } catch (err) {
       console.error('Error loading grammars:', err);
     } finally {
@@ -80,7 +99,7 @@ export default function GrammarsPage() {
 
   useEffect(() => {
     loadData();
-  }, [page, pageSize, search, levelFilter, statusFilter]);
+  }, [page, pageSize, debouncedSearch, levelFilter, statusFilter]);
 
   const openCreateModal = () => {
     setEditingItem(null);

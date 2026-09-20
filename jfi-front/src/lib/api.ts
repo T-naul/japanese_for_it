@@ -73,15 +73,26 @@ function formatPaginatedResponse<T>(
   };
 }
 
+let lastConnectionCheckTime = 0;
+let lastConnectionStatus = false;
+
 export const contentApi = {
   // Check Connection Status
   getBackendConnectionStatus: async (): Promise<{ isConnected: boolean; url: string }> => {
+    const now = Date.now();
+    if (now - lastConnectionCheckTime < 30000 && lastConnectionCheckTime > 0) {
+      return { isConnected: lastConnectionStatus, url: API_BASE_URL };
+    }
     try {
       await apiClient.get('/sources/');
       isLiveBackendConnected = true;
+      lastConnectionStatus = true;
+      lastConnectionCheckTime = now;
       return { isConnected: true, url: API_BASE_URL };
     } catch (err) {
       isLiveBackendConnected = false;
+      lastConnectionStatus = false;
+      lastConnectionCheckTime = now;
       return { isConnected: false, url: API_BASE_URL };
     }
   },

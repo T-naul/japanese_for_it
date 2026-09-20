@@ -126,6 +126,20 @@ class VocabularyDetailSerializer(
             "updated_at",
         ]
 
+    def to_representation(self, instance):
+        ret = super().to_representation(instance)
+        syns = instance.synonyms.all()
+        ret["synonyms_detail"] = [
+            {
+                "id": str(s.id),
+                "kanji": s.kanji,
+                "hiragana": s.hiragana,
+                "meaning": s.meaning,
+            }
+            for s in syns
+        ]
+        return ret
+
     def validate(self, attrs):
         """
         Business validation ở tầng API.

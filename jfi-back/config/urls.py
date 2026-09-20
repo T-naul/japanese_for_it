@@ -27,4 +27,8 @@ urlpatterns = [
         "api/learning/",
         include("apps.learning.urls"),
     ),
+    path(
+        "api/review/",
+        include("apps.review.urls"),
+    ),
 ]

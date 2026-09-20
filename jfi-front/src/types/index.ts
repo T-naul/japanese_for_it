@@ -92,6 +92,13 @@ export interface VocabularyForm {
   value: string;
 }
 
+export interface VocabularySynonymDetail {
+  id: string;
+  kanji: string;
+  hiragana: string;
+  meaning?: string;
+}
+
 export interface Vocabulary {
   id: string;
   kanji: string;
@@ -103,6 +110,7 @@ export interface Vocabulary {
   example: string;
   forms?: VocabularyForm[];
   synonyms?: string[];
+  synonyms_detail?: VocabularySynonymDetail[];
   sources?: string[];
   status: ContentStatus;
   version: number;
