@@ -15,9 +15,12 @@ import {
   Calendar,
   ChevronLeft,
   ChevronRight,
+  RefreshCw,
 } from 'lucide-react';
+import { useToast } from '@/components/common/ToastContext';
 
 export default function SourcesPage() {
+  const { showSuccess, showError } = useToast();
   const [sources, setSources] = useState<Source[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -30,6 +33,7 @@ export default function SourcesPage() {
 
   // Modal States
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [editingItem, setEditingItem] = useState<Source | null>(null);
 
   // Form Fields
@@ -84,28 +88,40 @@ export default function SourcesPage() {
     }
 
     try {
+      setIsSubmitting(true);
       if (editingItem) {
         await contentApi.updateSource(editingItem.id, {
           name,
           description,
         });
+        showSuccess('Cập nhật nguồn tài liệu thành công!');
       } else {
         await contentApi.createSource({
           name,
           description,
         });
+        showSuccess('Thêm nguồn tài liệu thành công!');
       }
       setIsModalOpen(false);
       await loadData();
     } catch (err: any) {
-      setFormError(err.message || 'Đã xảy ra lỗi khi lưu Nguồn tài liệu.');
+      const msg = err.message || 'Đã xảy ra lỗi khi lưu Nguồn tài liệu.';
+      setFormError(msg);
+      showError(msg);
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
   const handleDelete = async (id: string) => {
     if (confirm('Bạn có chắc chắn muốn xóa Nguồn tài liệu này?')) {
-      await contentApi.deleteSource(id);
-      await loadData();
+      try {
+        await contentApi.deleteSource(id);
+        showSuccess('Xóa nguồn tài liệu thành công!');
+        await loadData();
+      } catch (err: any) {
+        showError(err.message || 'Lỗi khi xóa nguồn tài liệu.');
+      }
     }
   };
 
@@ -278,8 +294,9 @@ export default function SourcesPage() {
                   {editingItem ? 'Chỉnh Sửa Nguồn Tài Liệu' : 'Thêm Nguồn Mới'}
                 </h3>
                 <button
-                  onClick={() => setIsModalOpen(false)}
-                  className="p-1 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800"
+                  onClick={() => !isSubmitting && setIsModalOpen(false)}
+                  disabled={isSubmitting}
+                  className="p-1 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 disabled:opacity-40 disabled:cursor-not-allowed"
                 >
                   <X className="w-5 h-5" />
                 </button>
@@ -322,16 +339,19 @@ export default function SourcesPage() {
                 <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-800">
                   <button
                     type="button"
+                    disabled={isSubmitting}
                     onClick={() => setIsModalOpen(false)}
-                    className="px-4 py-2 rounded-xl bg-slate-800 text-slate-300 text-sm font-medium hover:bg-slate-700"
+                    className="px-4 py-2 rounded-xl bg-slate-800 text-slate-300 text-sm font-medium hover:bg-slate-700 disabled:opacity-40 disabled:cursor-not-allowed"
                   >
                     Hủy
                   </button>
                   <button
                     type="submit"
-                    className="px-5 py-2 rounded-xl bg-cyan-600 hover:bg-cyan-500 text-white text-sm font-semibold shadow-lg shadow-cyan-600/30"
+                    disabled={isSubmitting}
+                    className="px-5 py-2 rounded-xl bg-cyan-600 hover:bg-cyan-500 text-white text-sm font-semibold shadow-lg shadow-cyan-600/30 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
                   >
-                    Lưu Nguồn
+                    {isSubmitting && <RefreshCw className="w-4 h-4 animate-spin" />}
+                    {isSubmitting ? 'Đang Lưu...' : 'Lưu Nguồn'}
                   </button>
                 </div>
               </form>

@@ -2,8 +2,6 @@
 
 from rest_framework import serializers
 
-from apps.content.models import Grammar, Vocabulary
-from apps.content.serializers import GrammarSerializer, VocabularyDetailSerializer
 from apps.users.models import UserGrammar, UserVocabulary
 
 from .models import DayGrammar, DayVocabulary, StudyPlan, StudyPlanDay, StudyPlanStatus

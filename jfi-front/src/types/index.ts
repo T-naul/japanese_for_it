@@ -14,7 +14,7 @@ export type VerbFormType =
   | 'ukemi'
   | 'shieki'
   | 'shieki_ukemi'
-  | 'imperative'
+  | 'meirei'
   | 'ikou'
   | 'kenshi'
   | 'jiouken';
@@ -29,7 +29,7 @@ export const VERB_FORM_LABELS: Record<VerbFormType, string> = {
   ukemi: '受身形 (Thể bị động)',
   shieki: '使役形 (Thể sai khiến)',
   shieki_ukemi: '使役受身形 (Thể sai khiến bị động)',
-  imperative: '命令形 (Thể mệnh lệnh)',
+  meirei: '命令形 (Thể mệnh lệnh)',
   ikou: '意向形 (Thể ý hướng)',
   kenshi: '禁止形 (Thể cấm chỉ)',
   jiouken: '条件形 (Thể điều kiện)',

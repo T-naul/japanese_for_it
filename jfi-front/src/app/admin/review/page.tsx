@@ -13,12 +13,16 @@ import {
   Sparkles,
   ArrowRight,
   ShieldCheck,
+  RefreshCw,
 } from 'lucide-react';
+import { useToast } from '@/components/common/ToastContext';
 
 export default function ReviewPage() {
+  const { showSuccess, showError } = useToast();
   const [vocabularies, setVocabularies] = useState<Vocabulary[]>([]);
   const [grammars, setGrammars] = useState<Grammar[]>([]);
   const [loading, setLoading] = useState(true);
+  const [processingId, setProcessingId] = useState<string | null>(null);
 
   const loadData = async () => {
     try {
@@ -41,13 +45,29 @@ export default function ReviewPage() {
   }, []);
 
   const handleApprove = async (type: 'vocabulary' | 'grammar', id: string) => {
-    await contentApi.updateItemStatus(type, id, 'accepted');
-    await loadData();
+    try {
+      setProcessingId(id);
+      await contentApi.updateItemStatus(type, id, 'accepted');
+      showSuccess(`Đã phê duyệt ${type === 'vocabulary' ? 'từ vựng' : 'ngữ pháp'} thành công!`);
+      await loadData();
+    } catch (err: any) {
+      showError(err.message || 'Lỗi khi phê duyệt nội dung.');
+    } finally {
+      setProcessingId(null);
+    }
   };
 
   const handleMoveToReview = async (type: 'vocabulary' | 'grammar', id: string) => {
-    await contentApi.updateItemStatus(type, id, 'review');
-    await loadData();
+    try {
+      setProcessingId(id);
+      await contentApi.updateItemStatus(type, id, 'review');
+      showSuccess(`Đã chuyển ${type === 'vocabulary' ? 'từ vựng' : 'ngữ pháp'} sang trạng thái Review!`);
+      await loadData();
+    } catch (err: any) {
+      showError(err.message || 'Lỗi khi chuyển trạng thái.');
+    } finally {
+      setProcessingId(null);
+    }
   };
 
   // Pending Vocabularies
@@ -153,17 +173,24 @@ export default function ReviewPage() {
                         <div className="flex items-center gap-2">
                           {vocab.status === 'upload' && (
                             <button
+                              disabled={processingId !== null}
                               onClick={() => handleMoveToReview('vocabulary', vocab.id)}
-                              className="px-3 py-1.5 rounded-xl bg-blue-500/10 hover:bg-blue-500/20 text-blue-400 text-xs font-semibold border border-blue-500/20 transition"
+                              className="px-3 py-1.5 rounded-xl bg-blue-500/10 hover:bg-blue-500/20 text-blue-400 text-xs font-semibold border border-blue-500/20 disabled:opacity-40 disabled:cursor-not-allowed transition flex items-center gap-1.5"
                             >
+                              {processingId === vocab.id && <RefreshCw className="w-3.5 h-3.5 animate-spin" />}
                               Chuyển Review
                             </button>
                           )}
                           <button
+                            disabled={processingId !== null}
                             onClick={() => handleApprove('vocabulary', vocab.id)}
-                            className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold shadow-lg shadow-emerald-600/20 transition"
+                            className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold shadow-lg shadow-emerald-600/20 disabled:opacity-40 disabled:cursor-not-allowed transition"
                           >
-                            <CheckCircle2 className="w-3.5 h-3.5" />
+                            {processingId === vocab.id ? (
+                              <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                            ) : (
+                              <CheckCircle2 className="w-3.5 h-3.5" />
+                            )}
                             Duyệt Ngay
                           </button>
                         </div>
@@ -221,17 +248,24 @@ export default function ReviewPage() {
                         <div className="flex items-center gap-2">
                           {grammar.status === 'upload' && (
                             <button
+                              disabled={processingId !== null}
                               onClick={() => handleMoveToReview('grammar', grammar.id)}
-                              className="px-3 py-1.5 rounded-xl bg-blue-500/10 hover:bg-blue-500/20 text-blue-400 text-xs font-semibold border border-blue-500/20 transition"
+                              className="px-3 py-1.5 rounded-xl bg-blue-500/10 hover:bg-blue-500/20 text-blue-400 text-xs font-semibold border border-blue-500/20 disabled:opacity-40 disabled:cursor-not-allowed transition flex items-center gap-1.5"
                             >
+                              {processingId === grammar.id && <RefreshCw className="w-3.5 h-3.5 animate-spin" />}
                               Chuyển Review
                             </button>
                           )}
                           <button
+                            disabled={processingId !== null}
                             onClick={() => handleApprove('grammar', grammar.id)}
-                            className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold shadow-lg shadow-emerald-600/20 transition"
+                            className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold shadow-lg shadow-emerald-600/20 disabled:opacity-40 disabled:cursor-not-allowed transition"
                           >
-                            <CheckCircle2 className="w-3.5 h-3.5" />
+                            {processingId === grammar.id ? (
+                              <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                            ) : (
+                              <CheckCircle2 className="w-3.5 h-3.5" />
+                            )}
                             Duyệt Ngay
                           </button>
                         </div>

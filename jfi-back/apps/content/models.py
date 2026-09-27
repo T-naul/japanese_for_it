@@ -36,7 +36,7 @@ class VerbFormType(models.TextChoices):
     UKEMI = "ukemi", "受身"
     SHIEKI = "shieki", "使役"
     SHIEKI_UKEMI = "shieki_ukemi", "使役受身"
-    IMPERATIVE = "imperative", "命令"
+    MEIREI = "meirei", "命令"
     IKOU = "ikou", "意向"
     KENSHI = "kenshi", "禁止"
     JIOUKEN = "jiouken", "条件"

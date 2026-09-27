@@ -7,6 +7,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+# pyrefly: ignore [missing-import]
 from apps.content.models import Grammar, Vocabulary
 from apps.content.serializers import GrammarSerializer, VocabularyDetailSerializer
 

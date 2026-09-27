@@ -22,10 +22,13 @@ import {
   ChevronLeft,
   ChevronRight,
   Upload,
+  RefreshCw,
 } from 'lucide-react';
-
+import { useToast } from '@/components/common/ToastContext';
+import { FuriganaText } from '@/components/common/common_fuc';
 
 export default function GrammarsPage() {
+  const { showSuccess, showError } = useToast();
   const [grammars, setGrammars] = useState<Grammar[]>([]);
   const [sources, setSources] = useState<Source[]>([]);
   const [loading, setLoading] = useState(true);
@@ -42,8 +45,9 @@ export default function GrammarsPage() {
   // Modal States
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [editingItem, setEditingItem] = useState<Grammar | null>(null);
-
+  const [viewingItem, setViewingItem] = useState<Grammar | null>(null);
 
   // Form Fields
   const [pattern, setPattern] = useState('');
@@ -140,6 +144,14 @@ export default function GrammarsPage() {
     setIsModalOpen(true);
   };
 
+  const handleViewDetail = async (item: Grammar) => {
+    try {
+      const detail = await contentApi.getGrammarById(item.id);
+      setViewingItem(detail);
+    } catch (err) {
+      setViewingItem(item);
+    }
+  };
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
     setFormError(null);
@@ -150,6 +162,7 @@ export default function GrammarsPage() {
     }
 
     try {
+      setIsSubmitting(true);
       if (editingItem) {
         await contentApi.updateGrammar(editingItem.id, {
           pattern,
@@ -160,6 +173,7 @@ export default function GrammarsPage() {
           status,
           sources: selectedSources,
         });
+        showSuccess('Cập nhật ngữ pháp thành công!');
       } else {
         await contentApi.createGrammar({
           pattern,
@@ -170,18 +184,28 @@ export default function GrammarsPage() {
           status,
           sources: selectedSources,
         });
+        showSuccess('Thêm ngữ pháp thành công!');
       }
       setIsModalOpen(false);
       await loadData();
     } catch (err: any) {
-      setFormError(err.message || 'Đã xảy ra lỗi khi lưu ngữ pháp.');
+      const msg = err.message || 'Đã xảy ra lỗi khi lưu ngữ pháp.';
+      setFormError(msg);
+      showError(msg);
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
   const handleDelete = async (id: string) => {
     if (confirm('Bạn có chắc muốn xóa mẫu ngữ pháp này?')) {
-      await contentApi.deleteGrammar(id);
-      await loadData();
+      try {
+        await contentApi.deleteGrammar(id);
+        showSuccess('Xóa ngữ pháp thành công!');
+        await loadData();
+      } catch (err: any) {
+        showError(err.message || 'Lỗi khi xóa ngữ pháp.');
+      }
     }
   };
 
@@ -282,7 +306,6 @@ export default function GrammarsPage() {
                   <th className="px-6 py-4 whitespace-nowrap">Ý Nghĩa & Ví Dụ IT</th>
                   <th className="px-6 py-4 whitespace-nowrap">Trình Độ</th>
                   <th className="px-6 py-4 whitespace-nowrap">Trạng Thái</th>
-                  <th className="px-6 py-4 whitespace-nowrap">Phiên Bản</th>
                   <th className="px-6 py-4 text-right whitespace-nowrap">Thao Tác</th>
                 </tr>
               </thead>
@@ -302,7 +325,10 @@ export default function GrammarsPage() {
                 ) : (
                   grammars.map((item) => (
                     <tr key={item.id} className="hover:bg-slate-800/40 transition">
-                      <td className="px-6 py-4 whitespace-nowrap">
+                      <td
+                        className="px-6 py-4 whitespace-nowrap cursor-pointer hover:text-violet-400"
+                        onClick={() => handleViewDetail(item)}
+                      >
                         <div className="font-extrabold text-white text-base text-violet-300">
                           {item.pattern}
                         </div>
@@ -330,10 +356,6 @@ export default function GrammarsPage() {
                         >
                           {STATUS_LABELS[item.status]?.label || item.status}
                         </span>
-                      </td>
-
-                      <td className="px-6 py-4 font-mono text-slate-400 text-xs whitespace-nowrap">
-                        v{item.version}
                       </td>
 
                       <td className="px-6 py-4 text-right whitespace-nowrap">
@@ -422,8 +444,9 @@ export default function GrammarsPage() {
                   {editingItem ? 'Chỉnh Sửa Ngữ Pháp' : 'Thêm Ngữ Pháp Mới'}
                 </h3>
                 <button
-                  onClick={() => setIsModalOpen(false)}
-                  className="p-1 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800"
+                  onClick={() => !isSubmitting && setIsModalOpen(false)}
+                  disabled={isSubmitting}
+                  className="p-1 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 disabled:opacity-40 disabled:cursor-not-allowed"
                 >
                   <X className="w-5 h-5" />
                 </button>
@@ -543,19 +566,141 @@ export default function GrammarsPage() {
                 <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-800">
                   <button
                     type="button"
+                    disabled={isSubmitting}
                     onClick={() => setIsModalOpen(false)}
-                    className="px-4 py-2 rounded-xl bg-slate-800 text-slate-300 text-sm font-medium hover:bg-slate-700"
+                    className="px-4 py-2 rounded-xl bg-slate-800 text-slate-300 text-sm font-medium hover:bg-slate-700 disabled:opacity-40 disabled:cursor-not-allowed"
                   >
                     Hủy
                   </button>
                   <button
                     type="submit"
-                    className="px-5 py-2 rounded-xl bg-violet-600 hover:bg-violet-500 text-white text-sm font-semibold shadow-lg shadow-violet-600/30"
+                    disabled={isSubmitting}
+                    className="px-5 py-2 rounded-xl bg-violet-600 hover:bg-violet-500 text-white text-sm font-semibold shadow-lg shadow-violet-600/30 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
                   >
-                    Lưu Ngữ Pháp
+                    {isSubmitting && <RefreshCw className="w-4 h-4 animate-spin" />}
+                    {isSubmitting ? 'Đang Lưu...' : 'Lưu Ngữ Pháp'}
                   </button>
                 </div>
               </form>
+            </div>
+          </div>
+        )}
+
+        {/* Quick Detail View Drawer/Modal */}
+        {viewingItem && (
+          <div className="fixed inset-0 z-50 flex justify-center p-4 bg-slate-950/80 backdrop-blur-sm overflow-y-auto scrollbar-hide [align-items:safe_center]">
+            <div className="relative w-full max-w-lg bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-2xl space-y-5">
+              <div className="flex items-start justify-between border-b border-slate-800 pb-4">
+                <div className="flex items-center gap-3">
+                  <div className="w-12 h-12 rounded-xl bg-violet-600/20 text-violet-400 border border-violet-500/30 flex items-center justify-center font-extrabold text-2xl">
+                    <FileText className="w-6 h-6 text-violet-400" />
+                  </div>
+                  <div>
+                    <h3 className="text-xl font-bold text-white text-violet-300">
+                      {viewingItem.pattern}
+                    </h3>
+                    <div className="flex items-center gap-2 text-xs mt-1">
+                      <span className="font-bold text-violet-400 px-2 py-0.5 rounded bg-violet-500/10 border border-violet-500/20">
+                        {viewingItem.level}
+                      </span>
+                      <span
+                        className={`font-semibold px-2 py-0.5 rounded-full border ${STATUS_LABELS[viewingItem.status]?.color || 'bg-slate-800 text-slate-300'
+                          }`}
+                      >
+                        {STATUS_LABELS[viewingItem.status]?.label || viewingItem.status}
+                      </span>
+                      <span className="text-slate-400 font-mono">
+                        v{viewingItem.version}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+                <button
+                  onClick={() => setViewingItem(null)}
+                  className="p-1 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              <div className="space-y-4 text-sm">
+                <div>
+                  <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">
+                    Ý nghĩa:
+                  </span>
+                  <ul className="mt-1 space-y-1">
+                    {viewingItem.meaning.split('\n').filter(Boolean).map((line, i) => (
+                      <li key={i} className="text-slate-200 font-medium flex gap-2">
+                        <span className="text-violet-400">•</span>
+                        <span>{line}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+
+                {viewingItem.explanation && (
+                  <div className="p-3.5 rounded-xl bg-slate-950 border border-slate-800 space-y-1">
+                    <span className="text-xs font-bold text-violet-400">
+                      Giải thích & Phân tích cấu trúc:
+                    </span>
+                    <p className="text-xs text-slate-300 whitespace-pre-wrap leading-relaxed">
+                      {viewingItem.explanation.replaceAll('=', '\n')}
+                    </p>
+                  </div>
+                )}
+
+                {viewingItem.example && (
+                  <div className="p-3.5 rounded-xl bg-slate-950 border border-slate-800 space-y-1">
+                    <span className="text-xs font-bold text-slate-400">
+                      Ví dụ:
+                    </span>
+                    {viewingItem.example && (() => {
+                      const [jp, vi] = viewingItem.example.split('||').map((s) => s.trim());
+                      return (
+                        <div className="p-3 rounded-xl bg-slate-950 border border-slate-800">
+                          <span className="text-xs font-semibold text-slate-400">Ví dụ</span>
+                          <p className="text-base text-slate-100 font-semibold mt-1 leading-relaxed">
+                            <FuriganaText text={jp} />
+                          </p>
+                          {vi && (
+                            <p className="text-xs text-slate-300 italic mt-1">{vi}</p>
+                          )}
+                        </div>
+                      );
+                    })()}
+                  </div>
+                )}
+
+                {viewingItem.sources && viewingItem.sources.length > 0 && (
+                  <div>
+                    <span className="text-xs font-semibold text-slate-400">
+                      Nguồn tài liệu:
+                    </span>
+                    <div className="flex flex-wrap gap-2 mt-1.5">
+                      {viewingItem.sources.map((srcId) => {
+                        const found = sources.find((s) => s.id === srcId);
+                        return (
+                          <span
+                            key={srcId}
+                            className="px-2.5 py-1 rounded-lg bg-slate-950 border border-slate-800 text-xs text-slate-300"
+                          >
+                            {found ? found.name : srcId}
+                          </span>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              <div className="pt-3 border-t border-slate-800 flex justify-end">
+                <button
+                  onClick={() => setViewingItem(null)}
+                  className="px-4 py-1.5 rounded-xl bg-slate-800 text-slate-300 text-xs font-medium hover:bg-slate-700 transition"
+                >
+                  Đóng
+                </button>
+              </div>
             </div>
           </div>
         )}

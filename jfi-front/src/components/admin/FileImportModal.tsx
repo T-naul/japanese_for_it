@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import { Upload, X, CheckCircle2, AlertTriangle, Download, RefreshCw, FileSpreadsheet } from 'lucide-react';
 import { ImportResult } from '@/types';
+import { useToast } from '@/components/common/ToastContext';
 
 interface FileImportModalProps {
   isOpen: boolean;
@@ -28,6 +29,7 @@ export default function FileImportModal({
   onSuccess,
   sampleInfo,
 }: FileImportModalProps) {
+  const { showSuccess, showError, showWarning } = useToast();
   const [file, setFile] = useState<File | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -67,10 +69,16 @@ export default function FileImportModal({
       const res = await onUpload(file);
       setResult(res);
       if (res.created_count > 0) {
+        showSuccess(`Import thành công ${res.created_count} dữ liệu mới!`);
         onSuccess();
       }
+      if (res.error_count > 0) {
+        showWarning(`Có ${res.error_count} dòng bị lỗi validate trong file.`);
+      }
     } catch (err: any) {
-      setError(err.message || 'Đã xảy ra lỗi khi upload file.');
+      const msg = err.message || 'Đã xảy ra lỗi khi upload file.';
+      setError(msg);
+      showError(msg);
     } finally {
       setLoading(false);
     }

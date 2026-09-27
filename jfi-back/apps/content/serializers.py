@@ -159,8 +159,8 @@ class VocabularyDetailSerializer(
             None,
         )
 
-        # Nếu request có forms thì kiểm tra.
-        if forms is not None:
+        # Nếu request truyền danh sách forms không rỗng thì kiểm tra.
+        if forms:
 
             if word_type != "verb" and not str(word_type).startswith("verb"):
                 raise serializers.ValidationError(

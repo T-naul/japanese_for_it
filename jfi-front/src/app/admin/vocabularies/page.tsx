@@ -27,8 +27,10 @@ import {
   ChevronLeft,
   ChevronRight,
   Upload,
+  RefreshCw,
 } from 'lucide-react';
-
+import { FuriganaText } from '@/components/common/common_fuc';
+import { useToast } from '@/components/common/ToastContext';
 
 const ALL_VERB_FORM_TYPES: VerbFormType[] = [
   'suru',
@@ -72,6 +74,7 @@ const isVerb = (type: string) =>
   type === 'verb-3';
 
 export default function VocabulariesPage() {
+  const { showSuccess, showError } = useToast();
   const [vocabularies, setVocabularies] = useState<Vocabulary[]>([]);
   const [sources, setSources] = useState<Source[]>([]);
   const [loading, setLoading] = useState(true);
@@ -90,6 +93,7 @@ export default function VocabulariesPage() {
   // Modal States
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [editingItem, setEditingItem] = useState<Vocabulary | null>(null);
   const [viewingItem, setViewingItem] = useState<Vocabulary | null>(null);
 
@@ -255,6 +259,7 @@ export default function VocabulariesPage() {
     }
 
     try {
+      setIsSubmitting(true);
       if (editingItem) {
         await contentApi.updateVocabulary(editingItem.id, {
           kanji,
@@ -269,6 +274,7 @@ export default function VocabulariesPage() {
           synonyms: selectedSynonyms,
           forms: isVerb(wordType) ? validForms : [],
         });
+        showSuccess('Cập nhật từ vựng thành công!');
       } else {
         await contentApi.createVocabulary({
           kanji,
@@ -283,19 +289,70 @@ export default function VocabulariesPage() {
           synonyms: selectedSynonyms,
           forms: isVerb(wordType) ? validForms : [],
         });
+        showSuccess('Thêm từ vựng thành công!');
       }
       setIsModalOpen(false);
       await loadData();
     } catch (err: any) {
-      setFormError(err.message || 'Đã xảy ra lỗi khi lưu từ vựng.');
+      const msg = err.message || 'Đã xảy ra lỗi khi lưu từ vựng.';
+      setFormError(msg);
+      showError(msg);
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
   const handleDelete = async (id: string) => {
     if (confirm('Bạn có chắc chắn muốn xóa từ vựng này?')) {
-      await contentApi.deleteVocabulary(id);
-      await loadData();
+      try {
+        await contentApi.deleteVocabulary(id);
+        showSuccess('Xóa từ vựng thành công!');
+        await loadData();
+      } catch (err: any) {
+        showError(err.message || 'Lỗi khi xóa từ vựng.');
+      }
     }
+  };
+
+  const handlePaste = (e: React.ClipboardEvent<HTMLTextAreaElement>) => {
+    let html = e.clipboardData.getData('text/html');
+    const plainText = e.clipboardData.getData('text/plain');
+
+    // Nếu không có text/html nhưng plain text lại chứa mã HTML dạng chuỗi
+    // (trường hợp copy từ View Source / Copy outerHTML) -> coi chuỗi đó là HTML luôn
+    if (!html && /<[a-z][\s\S]*>/i.test(plainText)) {
+      html = plainText;
+    }
+
+    if (!html) return; // thực sự không có HTML -> để mặc định dán plain text
+
+    e.preventDefault();
+
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(html, 'text/html');
+
+    // Ưu tiên lấy đúng phần tử chứa nghĩa (class "mean-word" như trong HTML mẫu)
+    let items = Array.from(doc.querySelectorAll('.mean-word'))
+      .map((el) => el.textContent?.trim())
+      .filter(Boolean);
+
+    // Nếu không tìm thấy .mean-word (paste từ nguồn khác), fallback về li/p/div
+    if (items.length === 0) {
+      items = Array.from(doc.querySelectorAll('li, p, h4, div'))
+        .map((el) => el.textContent?.trim())
+        .filter(Boolean);
+    }
+
+    const text = items.length > 0
+      ? items.join('\n')
+      : doc.body.textContent?.trim() || '';
+
+    const target = e.currentTarget;
+    const start = target.selectionStart;
+    const end = target.selectionEnd;
+    const newValue = meaning.slice(0, start) + text + meaning.slice(end);
+
+    setMeaning(newValue);
   };
 
   // Pagination Math
@@ -563,15 +620,16 @@ export default function VocabulariesPage() {
 
         {/* Modal Create/Edit Vocabulary */}
         {isModalOpen && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm overflow-y-auto">
+          <div className="fixed inset-0 z-50 flex justify-center p-4 bg-slate-950/80 backdrop-blur-sm overflow-y-auto scrollbar-hide [align-items:safe_center]">
             <div className="relative w-full max-w-2xl bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-2xl space-y-6 my-8">
               <div className="flex items-center justify-between border-b border-slate-800 pb-4">
                 <h3 className="text-lg font-bold text-white">
                   {editingItem ? 'Chỉnh Sửa Từ Vựng' : 'Thêm Từ Vựng Mới'}
                 </h3>
                 <button
-                  onClick={() => setIsModalOpen(false)}
-                  className="p-1 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800"
+                  onClick={() => !isSubmitting && setIsModalOpen(false)}
+                  disabled={isSubmitting}
+                  className="p-1 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 disabled:opacity-40 disabled:cursor-not-allowed"
                 >
                   <X className="w-5 h-5" />
                 </button>
@@ -635,6 +693,7 @@ export default function VocabulariesPage() {
                     placeholder="VD: Lập trình cài đặt chức năng hệ thống"
                     value={meaning}
                     onChange={(e) => setMeaning(e.target.value)}
+                    onPaste={handlePaste}
                     className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-slate-100 text-sm focus:outline-none focus:border-indigo-500"
                   />
                 </div>
@@ -711,7 +770,7 @@ export default function VocabulariesPage() {
                       </label>
                     </div>
 
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-h-60 overflow-y-auto pr-1">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-h-60 overflow-y-auto pr-1 scrollbar-hide">
                       {ALL_VERB_FORM_TYPES.map((typeKey) => (
                         <div key={typeKey} className="p-2.5 rounded-xl bg-slate-900 border border-slate-800 space-y-1">
                           <label className="block text-[11px] font-semibold text-slate-300">
@@ -815,11 +874,10 @@ export default function VocabulariesPage() {
                                     setSelectedSynonyms([...selectedSynonyms, v.id]);
                                   }
                                 }}
-                                className={`p-2 text-xs rounded-lg cursor-pointer flex items-center justify-between transition ${
-                                  isSelected
-                                    ? 'bg-indigo-600/20 text-indigo-300'
-                                    : 'hover:bg-slate-900 text-slate-300'
-                                }`}
+                                className={`p-2 text-xs rounded-lg cursor-pointer flex items-center justify-between transition ${isSelected
+                                  ? 'bg-indigo-600/20 text-indigo-300'
+                                  : 'hover:bg-slate-900 text-slate-300'
+                                  }`}
                               >
                                 <div>
                                   <span className="font-bold text-white mr-2">{v.kanji}</span>
@@ -878,16 +936,19 @@ export default function VocabulariesPage() {
                 <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-800">
                   <button
                     type="button"
+                    disabled={isSubmitting}
                     onClick={() => setIsModalOpen(false)}
-                    className="px-4 py-2 rounded-xl bg-slate-800 text-slate-300 text-sm font-medium hover:bg-slate-700"
+                    className="px-4 py-2 rounded-xl bg-slate-800 text-slate-300 text-sm font-medium hover:bg-slate-700 disabled:opacity-40 disabled:cursor-not-allowed"
                   >
                     Hủy
                   </button>
                   <button
                     type="submit"
-                    className="px-5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-semibold shadow-lg shadow-indigo-600/30"
+                    disabled={isSubmitting}
+                    className="px-5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-semibold shadow-lg shadow-indigo-600/30 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
                   >
-                    Lưu Từ Vựng
+                    {isSubmitting && <RefreshCw className="w-4 h-4 animate-spin" />}
+                    {isSubmitting ? 'Đang Lưu...' : 'Lưu Từ Vựng'}
                   </button>
                 </div>
               </form>
@@ -924,7 +985,14 @@ export default function VocabulariesPage() {
               <div className="space-y-3 text-sm">
                 <div>
                   <span className="text-xs font-semibold text-slate-400 uppercase">Ý nghĩa:</span>
-                  <p className="text-slate-200 font-medium mt-0.5">{viewingItem.meaning}</p>
+                  <ul className="mt-0.5 space-y-1">
+                    {viewingItem.meaning.split('\n').filter(Boolean).map((line, i) => (
+                      <li key={i} className="text-slate-200 font-medium flex gap-2">
+                        <span className="text-indigo-400">•</span>
+                        <span>{line}</span>
+                      </li>
+                    ))}
+                  </ul>
                 </div>
 
                 <div className="flex items-center gap-4 text-xs">
@@ -944,12 +1012,20 @@ export default function VocabulariesPage() {
                   </div>
                 </div>
 
-                {viewingItem.example && (
-                  <div className="p-3 rounded-xl bg-slate-950 border border-slate-800">
-                    <span className="text-xs font-semibold text-slate-400">Ví dụ</span>
-                    <p className="text-xs text-slate-300 italic mt-1">{viewingItem.example}</p>
-                  </div>
-                )}
+                {viewingItem.example && (() => {
+                  const [jp, vi] = viewingItem.example.split('||').map((s) => s.trim());
+                  return (
+                    <div className="p-3 rounded-xl bg-slate-950 border border-slate-800">
+                      <span className="text-xs font-semibold text-slate-400">Ví dụ</span>
+                      <p className="text-base text-slate-100 font-semibold mt-1 leading-relaxed">
+                        <FuriganaText text={jp} />
+                      </p>
+                      {vi && (
+                        <p className="text-xs text-slate-300 italic mt-1">{vi}</p>
+                      )}
+                    </div>
+                  );
+                })()}
 
                 {/* Verb Forms List */}
                 {viewingItem.forms && viewingItem.forms.length > 0 && (
@@ -971,11 +1047,11 @@ export default function VocabulariesPage() {
                 {/* Synonyms List */}
                 {((viewingItem.synonyms_detail && viewingItem.synonyms_detail.length > 0) ||
                   (viewingItem.synonyms && viewingItem.synonyms.length > 0)) && (
-                  <div>
-                    <span className="text-xs font-semibold text-indigo-400">Từ đồng nghĩa:</span>
-                    <div className="flex flex-wrap gap-2 mt-1.5">
-                      {viewingItem.synonyms_detail && viewingItem.synonyms_detail.length > 0
-                        ? viewingItem.synonyms_detail.map((syn) => (
+                    <div>
+                      <span className="text-xs font-semibold text-indigo-400">Từ đồng nghĩa:</span>
+                      <div className="flex flex-wrap gap-2 mt-1.5">
+                        {viewingItem.synonyms_detail && viewingItem.synonyms_detail.length > 0
+                          ? viewingItem.synonyms_detail.map((syn) => (
                             <div
                               key={syn.id}
                               className="px-2.5 py-1.5 rounded-lg bg-slate-950 border border-indigo-500/20 text-xs space-x-1.5"
@@ -989,7 +1065,7 @@ export default function VocabulariesPage() {
                               )}
                             </div>
                           ))
-                        : viewingItem.synonyms?.map((synId) => {
+                          : viewingItem.synonyms?.map((synId) => {
                             const found = vocabularies.find((v) => v.id === synId);
                             return (
                               <div
@@ -1007,9 +1083,9 @@ export default function VocabulariesPage() {
                               </div>
                             );
                           })}
+                      </div>
                     </div>
-                  </div>
-                )}
+                  )}
               </div>
 
               <div className="pt-3 border-t border-slate-800 flex justify-end">
