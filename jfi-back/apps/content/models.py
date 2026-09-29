@@ -24,6 +24,7 @@ class WordType(models.TextChoices):
     VERB_2 = "verb_2", "Động từ nhóm 2"
     VERB_3 = "verb_3", "Động từ nhóm 3"
     ADJECTIVE = "adjective", "Tính từ"
+    ADVERB = "adverb", "Trạng từ"
 
 
 class VerbFormType(models.TextChoices):
