@@ -10,3 +10,4 @@ django-storages[s3]
 boto3
 openpyxl>=3.1
 django-filter
+PyMuPDF>=1.23.0

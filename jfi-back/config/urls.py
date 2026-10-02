@@ -31,4 +31,27 @@ urlpatterns = [
         "api/review/",
         include("apps.review.urls"),
     ),
+    path(
+        "api/materials/",
+        include("apps.materials.urls"),
+    ),
+    path(
+        "api/my/materials/",
+        include("apps.materials.urls_my"),
+    ),
+    path(
+        "api/jobs/",
+        include("apps.jobs.urls"),
+    ),
 ]
+
+# OpenAPI documentation
+try:
+    from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView
+    urlpatterns += [
+        path("api/schema/", SpectacularAPIView.as_view(), name="schema"),
+        path("api/docs/", SpectacularSwaggerView.as_view(url_name="schema"), name="swagger-ui"),
+    ]
+except ImportError:
+    pass
+
