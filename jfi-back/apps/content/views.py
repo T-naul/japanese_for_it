@@ -1,4 +1,5 @@
 # pyrefly: ignore [missing-import]
+from rest_framework.permissions import IsAdminUser
 from rest_framework import viewsets, filters, status
 from rest_framework.decorators import action
 from rest_framework.parsers import MultiPartParser, FormParser
@@ -25,9 +26,9 @@ class VocabularyViewSet(viewsets.ModelViewSet):
     )
     pagination_class = StandardResultsSetPagination
 
-    # permission_classes = [
-    #     IsAdminUser,
-    # ]
+    permission_classes = [
+        IsAdminUser,
+    ]
 
     filter_backends = [
         DjangoFilterBackend,
@@ -79,9 +80,9 @@ class GrammarViewSet(viewsets.ModelViewSet):
     serializer_class = GrammarSerializer
     pagination_class = StandardResultsSetPagination
 
-    # permission_classes = [
-    #     IsAdminUser,
-    # ]
+    permission_classes = [
+        IsAdminUser,
+    ]
     filter_backends = [
         DjangoFilterBackend,
         filters.SearchFilter,
@@ -121,9 +122,9 @@ class SourceViewSet(viewsets.ModelViewSet):
     serializer_class = SourceSerializer
     pagination_class = StandardResultsSetPagination
 
-    # permission_classes = [
-    #     IsAdminUser,
-    # ]
+    permission_classes = [
+        IsAdminUser,
+    ]
     filter_backends = [
         DjangoFilterBackend,
         filters.SearchFilter,
