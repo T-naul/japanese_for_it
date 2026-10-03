@@ -40,6 +40,14 @@ urlpatterns = [
         include("apps.materials.urls_my"),
     ),
     path(
+        "api/shadowing/",
+        include("apps.shadowing.urls"),
+    ),
+    path(
+        "api/my/shadowing/",
+        include("apps.shadowing.urls_my"),
+    ),
+    path(
         "api/jobs/",
         include("apps.jobs.urls"),
     ),

@@ -31,3 +31,35 @@ class ShadowingSegmentAdmin(admin.ModelAdmin):
     list_filter = ["video"]
     search_fields = ["text", "reading", "speaker"]
     readonly_fields = ["id", "created_at", "updated_at"]
+
+
+from .models import UserShadowingSegment, UserShadowingVideo
+
+
+@admin.register(UserShadowingVideo)
+class UserShadowingVideoAdmin(admin.ModelAdmin):
+    list_display = [
+        "user",
+        "video",
+        "status",
+        "started_at",
+        "completed_at",
+        "created_at",
+    ]
+    list_filter = ["status", "created_at"]
+    search_fields = ["user__username", "user__email", "video__title"]
+    readonly_fields = ["id", "created_at", "updated_at"]
+
+
+@admin.register(UserShadowingSegment)
+class UserShadowingSegmentAdmin(admin.ModelAdmin):
+    list_display = [
+        "user_video",
+        "segment",
+        "completed",
+        "completed_at",
+        "created_at",
+    ]
+    list_filter = ["completed"]
+    search_fields = ["user_video__user__username", "segment__text"]
+    readonly_fields = ["id", "created_at", "updated_at"]

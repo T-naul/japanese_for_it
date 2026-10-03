@@ -213,3 +213,10 @@ SIMPLE_JWT = {
     "TOKEN_USER_ID_FIELD": "user_id",
     "TOKEN_USER_ID_CLAIM": "user_id",
 }
+
+SPECTACULAR_SETTINGS = {
+    "TITLE": "Japanese for IT API",
+    "DESCRIPTION": "Backend API for Japanese for IT learning platform",
+    "VERSION": "1.0.0",
+    "COMPONENT_SPLIT_REQUEST": True,
+}
