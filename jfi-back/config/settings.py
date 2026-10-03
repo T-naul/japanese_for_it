@@ -194,7 +194,13 @@ MAX_SHADOWING_VIDEO_SIZE_MB = env.int("MAX_SHADOWING_VIDEO_SIZE_MB", default=500
 # https://docs.djangoproject.com/en/5.0/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
-CORS_ALLOWED_ORIGINS = [ "http://localhost:3000", ] 
+CORS_ALLOWED_ORIGINS = [ "http://localhost:3000", "https://improving-kept-rapid-bathrooms.trycloudflare.com"] 
+ALLOWED_HOSTS = [
+    "localhost",
+    "127.0.0.1",
+    "back",
+]
+
 
 SIMPLE_JWT = {
     "ACCESS_TOKEN_LIFETIME": timedelta(hours=24),

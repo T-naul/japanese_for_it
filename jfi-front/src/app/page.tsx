@@ -1,4 +1,7 @@
+'use client';
+
 import Link from 'next/link';
+import { useAuth } from '@/context/AuthContext';
 import {
   BookOpen,
   FileText,
@@ -7,10 +10,14 @@ import {
   Sparkles,
   ArrowRight,
   ShieldAlert,
-  GraduationCap,
+  LogIn,
+  LogOut,
 } from 'lucide-react';
 
 export default function Home() {
+  const { user, isAuthenticated, logout } = useAuth();
+  const isAdmin = isAuthenticated && user?.is_staff;
+
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 font-sans selection:bg-indigo-500 selection:text-white flex flex-col justify-between">
       {/* Header Bar */}
@@ -32,13 +39,47 @@ export default function Home() {
             </div>
           </div>
 
-          <Link
-            href="/admin"
-            className="flex items-center gap-2 px-4 py-2 rounded-xl bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white font-semibold text-sm shadow-lg shadow-indigo-600/30 transition hover:-translate-y-0.5"
-          >
-            <ShieldAlert className="w-4 h-4" />
-            Truy Cập Admin Portal
-          </Link>
+          <div className="flex items-center gap-3">
+            {isAdmin ? (
+              <>
+                <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-xl bg-slate-800/60 border border-slate-700/60 text-xs text-slate-300">
+                  <div className="w-6 h-6 rounded-lg bg-indigo-600 flex items-center justify-center text-[11px] font-bold text-white">
+                    {(user?.first_name || user?.username || 'A')[0].toUpperCase()}
+                  </div>
+                  <span className="font-medium text-white max-w-[120px] truncate">
+                    {user?.first_name || user?.username}
+                  </span>
+                  <span className="text-[10px] bg-indigo-500/20 text-indigo-300 px-1.5 py-0.5 rounded font-mono">
+                    Staff
+                  </span>
+                </div>
+
+                <Link
+                  href="/admin"
+                  className="flex items-center gap-2 px-4 py-2 rounded-xl bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white font-semibold text-sm shadow-lg shadow-indigo-600/30 transition hover:-translate-y-0.5"
+                >
+                  <ShieldAlert className="w-4 h-4" />
+                  <span>Admin Dashboard</span>
+                </Link>
+
+                <button
+                  onClick={() => logout()}
+                  title="Đăng xuất"
+                  className="p-2 rounded-xl text-slate-400 hover:text-rose-400 hover:bg-slate-800 transition"
+                >
+                  <LogOut className="w-4 h-4" />
+                </button>
+              </>
+            ) : (
+              <Link
+                href="/admin/login"
+                className="flex items-center gap-2 px-4 py-2 rounded-xl bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white font-semibold text-sm shadow-lg shadow-indigo-600/30 transition hover:-translate-y-0.5"
+              >
+                <LogIn className="w-4 h-4" />
+                <span>Đăng Nhập Admin</span>
+              </Link>
+            )}
+          </div>
         </div>
       </header>
 
@@ -62,13 +103,25 @@ export default function Home() {
           </p>
 
           <div className="flex flex-wrap items-center justify-center gap-4 pt-4">
-            <Link
-              href="/admin"
-              className="flex items-center gap-2 px-6 py-3.5 rounded-2xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-base shadow-xl shadow-indigo-600/30 transition hover:-translate-y-0.5"
-            >
-              Vào Trang Dashboard Admin
-              <ArrowRight className="w-5 h-5" />
-            </Link>
+            {isAdmin ? (
+              <Link
+                href="/admin"
+                className="flex items-center gap-2 px-6 py-3.5 rounded-2xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-base shadow-xl shadow-indigo-600/30 transition hover:-translate-y-0.5"
+              >
+                Vào Trang Dashboard Admin
+                <ArrowRight className="w-5 h-5" />
+              </Link>
+            ) : (
+              <Link
+                href="/admin/login"
+                className="flex items-center gap-2 px-6 py-3.5 rounded-2xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-base shadow-xl shadow-indigo-600/30 transition hover:-translate-y-0.5"
+              >
+                <LogIn className="w-5 h-5" />
+                Đăng Nhập Quản Trị Viên
+                <ArrowRight className="w-5 h-5" />
+              </Link>
+            )}
+
             <Link
               href="/admin/review"
               className="flex items-center gap-2 px-6 py-3.5 rounded-2xl bg-slate-900 hover:bg-slate-800 text-slate-200 border border-slate-800 font-semibold text-base transition hover:-translate-y-0.5"

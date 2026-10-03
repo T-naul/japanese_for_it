@@ -9,12 +9,64 @@ import {
   GrammarQueryParams,
   SourceQueryParams,
   ImportResult,
+  User,
+  LoginCredentials,
+  AuthResponse,
 } from '@/types';
 
-const API_BASE_URL =
+export const API_BASE_URL =
   process.env.ADMIN_BASE_URL ||
   process.env.NEXT_PUBLIC_API_URL ||
-  'http://localhost:7000/api/content';
+  '/api/content';
+
+export const BACKEND_ROOT_URL =
+  process.env.NEXT_PUBLIC_BACKEND_URL ||
+  (process.env.ADMIN_BASE_URL ? process.env.ADMIN_BASE_URL.replace(/\/api\/content\/?$/, '') : '') ||
+  '';
+
+export const AUTH_API_URL = `/api/auth`;
+
+// ---------------- Token & User Storage Helpers ----------------
+export const TOKEN_STORAGE_KEY = 'jfi_access_token';
+export const REFRESH_STORAGE_KEY = 'jfi_refresh_token';
+export const USER_STORAGE_KEY = 'jfi_auth_user';
+
+export const authStorage = {
+  getAccessToken: (): string | null => {
+    if (typeof window === 'undefined') return null;
+    return localStorage.getItem(TOKEN_STORAGE_KEY);
+  },
+  getRefreshToken: (): string | null => {
+    if (typeof window === 'undefined') return null;
+    return localStorage.getItem(REFRESH_STORAGE_KEY);
+  },
+  setTokens: (access: string, refresh?: string) => {
+    if (typeof window === 'undefined') return;
+    localStorage.setItem(TOKEN_STORAGE_KEY, access);
+    if (refresh) {
+      localStorage.setItem(REFRESH_STORAGE_KEY, refresh);
+    }
+  },
+  getUser: (): User | null => {
+    if (typeof window === 'undefined') return null;
+    try {
+      const data = localStorage.getItem(USER_STORAGE_KEY);
+      return data ? JSON.parse(data) : null;
+    } catch {
+      return null;
+    }
+  },
+  setUser: (user: User) => {
+    if (typeof window === 'undefined') return;
+    localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(user));
+  },
+  clear: () => {
+    if (typeof window === 'undefined') return;
+    localStorage.removeItem(TOKEN_STORAGE_KEY);
+    localStorage.removeItem(REFRESH_STORAGE_KEY);
+    localStorage.removeItem(USER_STORAGE_KEY);
+  },
+};
 
 // Axios Instance
 export const apiClient = axios.create({
@@ -25,6 +77,111 @@ export const apiClient = axios.create({
   },
   timeout: 10000,
 });
+
+// Attach Authorization Bearer token to all apiClient requests
+apiClient.interceptors.request.use((config) => {
+  const token = authStorage.getAccessToken();
+  if (token && config.headers) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+  return config;
+});
+
+// Handle 401 Unauthorized responses
+apiClient.interceptors.response.use(
+  (response) => response,
+  async (error) => {
+    const originalRequest = error.config;
+    if (error.response?.status === 401 && !originalRequest?._retry) {
+      originalRequest._retry = true;
+      const newToken = await authApi.refreshToken();
+      if (newToken && originalRequest.headers) {
+        originalRequest.headers.Authorization = `Bearer ${newToken}`;
+        return apiClient(originalRequest);
+      }
+    }
+    return Promise.reject(error);
+  }
+);
+
+// ---------------- Auth API ----------------
+export const authApi = {
+  login: async (credentials: LoginCredentials): Promise<AuthResponse> => {
+    const res = await axios.post<AuthResponse>(`${AUTH_API_URL}/login/`, credentials, {
+      headers: {
+        'Content-Type': 'application/json',
+        Accept: 'application/json',
+      },
+      timeout: 10000,
+    });
+    if (res.data.access) {
+      authStorage.setTokens(res.data.access, res.data.refresh);
+    }
+    if (res.data.user) {
+      authStorage.setUser(res.data.user);
+    }
+    return res.data;
+  },
+
+  getCurrentUser: async (token?: string): Promise<User> => {
+    const accessToken = token || authStorage.getAccessToken();
+    if (!accessToken) {
+      throw new Error('No access token available');
+    }
+    const res = await axios.get<User>(`${AUTH_API_URL}/me/`, {
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        Accept: 'application/json',
+      },
+      timeout: 10000,
+    });
+    authStorage.setUser(res.data);
+    return res.data;
+  },
+
+  logout: async (refreshToken?: string): Promise<void> => {
+    const refresh = refreshToken || authStorage.getRefreshToken();
+    const token = authStorage.getAccessToken();
+    if (refresh && token) {
+      try {
+        await axios.post(
+          `${AUTH_API_URL}/logout/`,
+          { refresh },
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+              'Content-Type': 'application/json',
+            },
+            timeout: 5000,
+          }
+        );
+      } catch (err) {
+        console.warn('Backend logout failed or token already invalid', err);
+      }
+    }
+    authStorage.clear();
+  },
+
+  refreshToken: async (): Promise<string | null> => {
+    const refresh = authStorage.getRefreshToken();
+    if (!refresh) return null;
+    try {
+      const res = await axios.post<{ access: string }>(
+        `${AUTH_API_URL}/refresh/`,
+        { refresh },
+        { timeout: 5000 }
+      );
+      if (res.data?.access) {
+        authStorage.setTokens(res.data.access);
+        return res.data.access;
+      }
+      return null;
+    } catch {
+      authStorage.clear();
+      return null;
+    }
+  },
+};
 
 // Fallback Memory Store
 let vocabulariesStore: Vocabulary[] = [];
