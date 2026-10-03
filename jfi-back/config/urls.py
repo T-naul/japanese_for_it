@@ -43,6 +43,10 @@ urlpatterns = [
         "api/jobs/",
         include("apps.jobs.urls"),
     ),
+    path(
+        "api/auth/",
+        include("apps.users.urls"),
+    ),
 ]
 
 # OpenAPI documentation

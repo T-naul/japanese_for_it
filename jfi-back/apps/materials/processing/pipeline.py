@@ -79,27 +79,35 @@ class PDFProcessingPipeline:
 
         try:
             # 5. Resolve file path
+            # Remote storages (S3/R2) don't support `.path` and raise
+            # NotImplementedError when it's accessed — even via hasattr().
             file_path = None
             temp_file_created = False
-            if material.file and hasattr(material.file, "path"):
+            if material.file:
                 try:
                     file_path = material.file.path
-                except NotImplementedError:
+                except (NotImplementedError, AttributeError, ValueError):
                     file_path = None
 
-            if not file_path and material.metadata:
-                file_path = material.metadata.get("file_path")
+            if (not file_path or not os.path.exists(file_path)) and material.metadata:
+                meta_path = material.metadata.get("file_path")
+                if meta_path and os.path.exists(meta_path):
+                    file_path = meta_path
 
-            if not file_path and material.file:
+            if (not file_path or not os.path.exists(file_path)) and material.file:
+                import tempfile
                 try:
-                    import tempfile
                     with tempfile.NamedTemporaryFile(suffix=".pdf", delete=False) as tmp:
-                        for chunk in material.file.chunks():
-                            tmp.write(chunk)
                         file_path = tmp.name
                         temp_file_created = True
+                        with material.file.open("rb") as src:
+                            for chunk in src.chunks():
+                                tmp.write(chunk)
                 except Exception as exc:
-                    logger.warning("Failed to write material file to tempfile: %s", exc)
+                    logger.warning("Failed to download material file to tempfile: %s", exc)
+                    raise PDFProcessingError(
+                        f"Cannot download file for material {material_id} from storage."
+                    ) from exc
 
             if not file_path or not os.path.exists(file_path):
                 raise PDFProcessingError(f"File for material {material_id} does not exist: {file_path}")

@@ -4,9 +4,12 @@ import re
 from .exceptions import PDFProcessingError
 
 try:
-    import fitz
+    import pymupdf as fitz
 except ImportError:
-    fitz = None
+    try:
+        import fitz  # Legacy name for PyMuPDF < 1.24.3
+    except ImportError:
+        fitz = None
 
 
 @dataclass
