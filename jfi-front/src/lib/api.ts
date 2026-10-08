@@ -12,6 +12,11 @@ import {
   User,
   LoginCredentials,
   AuthResponse,
+  StudyPlan,
+  StudyPlanDay,
+  StudyPlanDayProgress,
+  ReviewAvailableSummary,
+  TodayStudyState,
 } from '@/types';
 
 export const API_BASE_URL =
@@ -178,6 +183,170 @@ export const authApi = {
       return null;
     } catch {
       authStorage.clear();
+      return null;
+    }
+  },
+};
+
+// ---------------- Learning & Study Plan API ----------------
+export const learningApi = {
+  getPlans: async (): Promise<StudyPlan[]> => {
+    const token = authStorage.getAccessToken();
+    if (!token) return [];
+    try {
+      const res = await axios.get<StudyPlan[] | { results: StudyPlan[] }>(
+        `${BACKEND_ROOT_URL}/api/learning/plans/`,
+        {
+          headers: { Authorization: `Bearer ${token}` },
+          timeout: 10000,
+        }
+      );
+      if (Array.isArray(res.data)) return res.data;
+      if (res.data && 'results' in res.data && Array.isArray(res.data.results)) {
+        return res.data.results;
+      }
+      return [];
+    } catch {
+      return [];
+    }
+  },
+
+  getPlanDays: async (planId: string): Promise<StudyPlanDay[]> => {
+    const token = authStorage.getAccessToken();
+    if (!token) return [];
+    try {
+      const res = await axios.get<StudyPlanDay[]>(
+        `${BACKEND_ROOT_URL}/api/learning/plans/${planId}/days/`,
+        {
+          headers: { Authorization: `Bearer ${token}` },
+          timeout: 10000,
+        }
+      );
+      return Array.isArray(res.data) ? res.data : [];
+    } catch {
+      return [];
+    }
+  },
+
+  getDayProgress: async (planId: string, dayId: string): Promise<StudyPlanDayProgress> => {
+    const token = authStorage.getAccessToken();
+    if (!token) {
+      throw new Error('Not authenticated');
+    }
+    const res = await axios.get<StudyPlanDayProgress>(
+      `${BACKEND_ROOT_URL}/api/learning/plans/${planId}/days/${dayId}/progress/`,
+      {
+        headers: { Authorization: `Bearer ${token}` },
+        timeout: 10000,
+      }
+    );
+    return res.data;
+  },
+
+  getTodayStudyState: async (): Promise<TodayStudyState> => {
+    const token = authStorage.getAccessToken();
+    if (!token) {
+      return { hasActivePlan: false, isToday: false };
+    }
+
+    const plans = await learningApi.getPlans();
+    const activePlan = plans.find((p) => p.status === 'active') || plans[0];
+
+    if (!activePlan) {
+      return { hasActivePlan: false, isToday: false };
+    }
+
+    const days = await learningApi.getPlanDays(activePlan.id);
+    if (!days || days.length === 0) {
+      return { hasActivePlan: true, plan: activePlan, isToday: false };
+    }
+
+    // Format local date YYYY-MM-DD
+    const now = new Date();
+    const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+
+    // Find day for today
+    let matchedDay = days.find((d) => d.date === todayStr);
+    let isToday = true;
+
+    // If today is not in plan (e.g. before start or after end), pick the first day or last day
+    if (!matchedDay) {
+      isToday = false;
+      if (todayStr < days[0].date) {
+        matchedDay = days[0];
+      } else {
+        matchedDay = days[days.length - 1];
+      }
+    }
+
+    try {
+      const progress = await learningApi.getDayProgress(activePlan.id, matchedDay.id);
+      return {
+        hasActivePlan: true,
+        plan: activePlan,
+        day: matchedDay,
+        progress,
+        isToday,
+      };
+    } catch {
+      return {
+        hasActivePlan: true,
+        plan: activePlan,
+        day: matchedDay,
+        isToday,
+      };
+    }
+  },
+};
+
+// ---------------- Review API ----------------
+export const reviewApi = {
+  getAvailableSummary: async (): Promise<ReviewAvailableSummary | null> => {
+    const token = authStorage.getAccessToken();
+    if (!token) return null;
+    try {
+      const res = await axios.get<ReviewAvailableSummary>(
+        `${BACKEND_ROOT_URL}/api/review/available/`,
+        {
+          headers: { Authorization: `Bearer ${token}` },
+          timeout: 10000,
+        }
+      );
+      return res.data;
+    } catch {
+      return null;
+    }
+  },
+};
+
+// ---------------- My Materials & Shadowing API ----------------
+export const userMaterialsApi = {
+  getMyMaterials: async (): Promise<any> => {
+    const token = authStorage.getAccessToken();
+    if (!token) return null;
+    try {
+      const res = await axios.get(`${BACKEND_ROOT_URL}/api/my/materials/`, {
+        headers: { Authorization: `Bearer ${token}` },
+        timeout: 10000,
+      });
+      return res.data;
+    } catch {
+      return null;
+    }
+  },
+};
+
+export const userShadowingApi = {
+  getMyShadowing: async (): Promise<any> => {
+    const token = authStorage.getAccessToken();
+    if (!token) return null;
+    try {
+      const res = await axios.get(`${BACKEND_ROOT_URL}/api/my/shadowing/`, {
+        headers: { Authorization: `Bearer ${token}` },
+        timeout: 10000,
+      });
+      return res.data;
+    } catch {
       return null;
     }
   },

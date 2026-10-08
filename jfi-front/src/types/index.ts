@@ -168,3 +168,55 @@ export interface AuthResponse {
   refresh?: string;
 }
 
+// ---------------- Study Plan & Learning Types ----------------
+export type StudyPlanStatus = 'active' | 'completed' | 'cancelled';
+
+export interface StudyPlan {
+  id: string;
+  level: JLPTLevel;
+  total_days: number;
+  start_date: string;
+  status: StudyPlanStatus;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface StudyPlanDay {
+  id: string;
+  day_number: number;
+  date: string;
+}
+
+export interface SubProgress {
+  total: number;
+  learned: number;
+  remaining: number;
+}
+
+export interface StudyPlanDayProgress {
+  total: number;
+  learned: number;
+  remaining: number;
+  percentage: number;
+  completed: boolean;
+  vocabulary: SubProgress;
+  grammar: SubProgress;
+}
+
+export interface ReviewAvailableSummary {
+  available: boolean;
+  vocabulary_count: number;
+  grammar_count: number;
+  total: number;
+  reason?: string;
+  message?: string;
+}
+
+export interface TodayStudyState {
+  hasActivePlan: boolean;
+  plan?: StudyPlan;
+  day?: StudyPlanDay;
+  progress?: StudyPlanDayProgress;
+  isToday: boolean;
+}
+
