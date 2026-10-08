@@ -27,7 +27,7 @@ export function NextActions({
           id="next-actions-heading"
           className="text-xs font-bold tracking-wider text-stone-600 uppercase"
         >
-          次にやること
+          Việc cần làm tiếp theo
         </h3>
       </div>
 
@@ -37,14 +37,14 @@ export function NextActions({
           <CardHeader className="p-4 sm:p-5 pb-2">
             <div className="flex items-center justify-between">
               <span className="text-base font-bold text-stone-900">
-                Shadowing
+                Luyện nhại (Shadowing)
               </span>
               <div className="w-8 h-8 rounded-lg bg-indigo-50 text-indigo-600 flex items-center justify-center">
                 <Video className="w-4 h-4" />
               </div>
             </div>
             <p className="text-xs sm:text-sm text-stone-500 mt-1">
-              IT会話を聞いて発音・リズムを練習
+              Nghe hội thoại IT và luyện phát âm, ngữ điệu.
             </p>
           </CardHeader>
 
@@ -55,7 +55,7 @@ export function NextActions({
               className="w-full justify-between font-semibold shadow-xs"
             >
               <Link href="/video">
-                <span>続ける</span>
+                <span>Tiếp tục</span>
                 <ArrowRight className="w-3.5 h-3.5" />
               </Link>
             </Button>
@@ -70,10 +70,10 @@ export function NextActions({
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <span className="text-base font-bold text-stone-900">
-                    Review
+                    Ôn tập
                   </span>
                   <Badge variant="subtle" className="text-[10px] font-semibold">
-                    {reviewTotal}問
+                    {reviewTotal} câu
                   </Badge>
                 </div>
                 <div className="w-8 h-8 rounded-lg bg-violet-50 text-violet-600 flex items-center justify-center">
@@ -81,7 +81,7 @@ export function NextActions({
                 </div>
               </div>
               <p className="text-xs sm:text-sm text-stone-500 mt-1">
-                {reviewTotal}問の復習が待っています
+                Có {reviewTotal} câu đang chờ bạn ôn tập.
               </p>
             </CardHeader>
 
@@ -93,7 +93,7 @@ export function NextActions({
                 className="w-full justify-between font-semibold border-violet-200 text-violet-700 hover:bg-violet-50"
               >
                 <Link href="/review">
-                  <span>復習する</span>
+                  <span>Ôn tập ngay</span>
                   <ArrowRight className="w-3.5 h-3.5" />
                 </Link>
               </Button>
@@ -105,14 +105,14 @@ export function NextActions({
             <CardHeader className="p-4 sm:p-5 pb-2">
               <div className="flex items-center justify-between">
                 <span className="text-base font-semibold text-stone-500">
-                  Review
+                  Ôn tập
                 </span>
                 <div className="w-8 h-8 rounded-lg bg-stone-100 text-stone-400 flex items-center justify-center">
                   <CheckCircle2 className="w-4 h-4 text-stone-400" />
                 </div>
               </div>
               <p className="text-xs sm:text-sm text-stone-400 mt-1">
-                待機中の復習はありません
+                Hiện không có nội dung cần ôn tập.
               </p>
             </CardHeader>
 
@@ -124,7 +124,7 @@ export function NextActions({
                 className="w-full justify-between font-normal text-xs text-stone-400 hover:text-stone-600 hover:bg-stone-100/60"
               >
                 <Link href="/review">
-                  <span>復習履歴を確認</span>
+                  <span>Xem lịch sử ôn tập</span>
                   <ArrowRight className="w-3.5 h-3.5 text-stone-300" />
                 </Link>
               </Button>

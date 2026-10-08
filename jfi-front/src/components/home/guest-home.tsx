@@ -15,15 +15,15 @@ export function GuestHome() {
           JFI
         </div>
 
-        {/* Japanese Main Concept */}
+        {/* Main concept */}
         <div className="space-y-2">
           <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-stone-900">
-            日本語を、ITの仕事につなげる。
+            Kết nối tiếng Nhật với công việc IT.
           </h1>
           <p className="text-xs sm:text-sm text-stone-500 leading-relaxed max-w-xs mx-auto">
-            ITエンジニアのための日本語学習。
+            Học tiếng Nhật dành cho kỹ sư Công nghệ thông tin.
             <br />
-            Học tiếng Nhật chuyên ngành Công nghệ thông tin theo lộ trình chuẩn.
+            Học theo lộ trình bài bản, gắn với công việc thực tế.
           </p>
         </div>
 
@@ -32,7 +32,7 @@ export function GuestHome() {
           <Button asChild size="lg" className="w-full font-semibold shadow-sm">
             <Link href="/login" className="flex items-center justify-center gap-2">
               <LogIn className="w-4 h-4" />
-              <span>ログイン (Đăng nhập)</span>
+              <span>Đăng nhập</span>
             </Link>
           </Button>
         </div>

@@ -40,7 +40,7 @@ export function UserAppShell({ children }: UserAppShellProps) {
                 Japanese for IT
               </span>
               <span className="text-[11px] text-stone-500 hidden sm:block leading-none">
-                ITエンジニアのための日本語
+                Tiếng Nhật chuyên ngành Công nghệ thông tin
               </span>
             </div>
           </Link>

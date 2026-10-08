@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
@@ -18,7 +18,6 @@ import {
   User,
   X,
 } from 'lucide-react';
-import { createPortal } from "react-dom";
 
 interface NavItem {
   label: string;
@@ -29,21 +28,20 @@ interface NavItem {
 
 const PRIMARY_NAV_ITEMS: NavItem[] = [
   {
-    label: 'Home',
-    jpLabel: 'ホーム',
+    label: 'Trang chủ',
+    jpLabel: 'Về trang chủ',
     href: '/',
     icon: Home,
   },
-
   {
-    label: 'Study',
-    jpLabel: '学習',
-    href: '/study',
+    label: 'Học tập',
+    jpLabel: 'Lộ trình học',
+    href: '/materials',
     icon: BookOpenCheck,
   },
   {
-    label: 'Video',
-    jpLabel: '動画 (Shadowing)',
+    label: 'Luyện nói',
+    jpLabel: 'Luyện nhại theo (Shadowing)',
     href: '/video',
     icon: Video,
   },
@@ -52,49 +50,49 @@ const PRIMARY_NAV_ITEMS: NavItem[] = [
 const MORE_NAV_ITEMS = [
   {
     label: 'Ôn tập kiến thức',
-    jpLabel: '復習 (Review)',
+    jpLabel: 'Ôn tập',
     description: 'Củng cố từ vựng & ngữ pháp IT đã học',
     href: '/review',
     icon: BookmarkCheck,
   },
   {
     label: 'Tài liệu học tập',
-    jpLabel: '教材 (Materials)',
+    jpLabel: 'Tài liệu',
     description: 'Giáo trình và bài học chuyên sâu',
     href: '/materials',
     icon: FolderKanban,
   },
   {
     label: 'Kho Từ vựng',
-    jpLabel: '単語 (Vocabulary)',
+    jpLabel: 'Từ vựng',
     description: 'Tra cứu Kanji, thể chia động từ',
     href: '/vocab',
     icon: BookOpen,
   },
   {
     label: 'Kho Ngữ pháp',
-    jpLabel: '文法 (Grammar)',
+    jpLabel: 'Ngữ pháp',
     description: 'Mẫu câu thực tế trong dự án IT',
     href: '/grammar',
     icon: FileText,
   },
   {
     label: 'Tiến độ học tập',
-    jpLabel: '進捗 (Progress)',
+    jpLabel: 'Tiến độ',
     description: 'Thống kê tỷ lệ hoàn thành',
     href: '/progress',
     icon: BarChart3,
   },
   {
     label: 'Cài đặt',
-    jpLabel: '設定 (Settings)',
+    jpLabel: 'Tùy chỉnh',
     description: 'Tùy chỉnh thông báo và giao diện',
     href: '/settings',
     icon: Settings,
   },
   {
     label: 'Hồ sơ cá nhân',
-    jpLabel: 'プロフィール (Profile)',
+    jpLabel: 'Tài khoản',
     description: 'Thông tin tài khoản học viên',
     href: '/profile',
     icon: User,
@@ -103,7 +101,51 @@ const MORE_NAV_ITEMS = [
 
 export function IslandNavigation() {
   const pathname = usePathname();
-  const [showMoreMenu, setShowMoreMenu] = useState(false);
+
+  // Tách state riêng cho desktop và mobile để không ảnh hưởng lẫn nhau
+  const [showMoreMenu, setShowMoreMenu] = useState(false); // desktop
+  const [showMobileMore, setShowMobileMore] = useState(false); // mobile
+
+  // Ref bao cả nút "Thêm" lẫn menu desktop → click vào nút không bị tính là "click ngoài"
+  const moreRef = useRef<HTMLDivElement>(null);
+
+  // Desktop: click ra ngoài / nhấn Esc để đóng menu
+  useEffect(() => {
+    if (!showMoreMenu) return;
+
+    const handleClickOutside = (e: MouseEvent) => {
+      if (moreRef.current && !moreRef.current.contains(e.target as Node)) {
+        setShowMoreMenu(false);
+      }
+    };
+    const handleEsc = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setShowMoreMenu(false);
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    document.addEventListener('keydown', handleEsc);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('keydown', handleEsc);
+    };
+  }, [showMoreMenu]);
+
+  // Mobile: nhấn Esc để đóng + khóa scroll nền khi sheet đang mở
+  useEffect(() => {
+    if (!showMobileMore) return;
+
+    const handleEsc = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setShowMobileMore(false);
+    };
+    const prevOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    document.addEventListener('keydown', handleEsc);
+
+    return () => {
+      document.body.style.overflow = prevOverflow;
+      document.removeEventListener('keydown', handleEsc);
+    };
+  }, [showMobileMore]);
 
   return (
     <>
@@ -141,11 +183,11 @@ export function IslandNavigation() {
           );
         })}
 
-        {/* More Trigger */}
-        <div className="relative">
+        {/* More Trigger (desktop) */}
+        <div className="relative" ref={moreRef}>
           <button
             type="button"
-            onClick={() => setShowMoreMenu(!showMoreMenu)}
+            onClick={() => setShowMoreMenu((prev) => !prev)}
             aria-label="Thêm mục học tập"
             aria-expanded={showMoreMenu}
             className={cn(
@@ -163,56 +205,53 @@ export function IslandNavigation() {
 
           {/* Desktop More Menu Flyout */}
           {showMoreMenu && (
-            <>
-              {createPortal(
-                <div
-                  className="fixed inset-0 z-40"
+            // Chỉnh vị trí dọc tại đây:
+            //  - Hạ thấp hơn: -bottom-8, -bottom-12 ...
+            //  - Căn đỉnh với nút: đổi thành top-0
+            //  - Căn giữa với nút: top-1/2 -translate-y-1/2
+            <div className="absolute left-full top-1/2 -translate-y-1/2 ml-3 z-50 w-72 max-h-[calc(100dvh-2rem)] overflow-y-auto p-3 rounded-2xl bg-white border border-stone-200 shadow-xl animate-in fade-in zoom-in-95 duration-150">
+              <div className="px-2 py-1.5 mb-1 flex items-center justify-between border-b border-stone-100">
+                <span className="text-xs font-semibold text-stone-500 uppercase tracking-wider">
+                  Mục học tập khác
+                </span>
+                <button
+                  type="button"
                   onClick={() => setShowMoreMenu(false)}
-                />,
-                document.body
-              )}
-              <div className="absolute left-full bottom-0 ml-3 z-50 w-72 p-3 rounded-2xl bg-white border border-stone-200 shadow-xl animate-in fade-in zoom-in-95 duration-150">
-                <div className="px-2 py-1.5 mb-1 flex items-center justify-between border-b border-stone-100">
-                  <span className="text-xs font-semibold text-stone-500 uppercase tracking-wider">
-                    Mục học tập khác
-                  </span>
-                  <button
-                    onClick={() => setShowMoreMenu(false)}
-                    className="p-1 rounded-md text-stone-400 hover:text-stone-600 hover:bg-stone-100"
-                  >
-                    <X className="w-3.5 h-3.5" />
-                  </button>
-                </div>
-                <div className="space-y-1">
-                  {MORE_NAV_ITEMS.map((subItem) => {
-                    const SubIcon = subItem.icon;
-                    return (
-                      <Link
-                        key={subItem.href}
-                        href={subItem.href}
-                        onClick={() => setShowMoreMenu(false)}
-                        className="flex items-start gap-3 p-2.5 rounded-xl hover:bg-stone-50 transition-colors group"
-                      >
-                        <div className="p-2 rounded-lg bg-stone-100 text-stone-600 group-hover:bg-indigo-50 group-hover:text-indigo-600 transition-colors shrink-0">
-                          <SubIcon className="w-4 h-4" />
-                        </div>
-                        <div className="min-w-0 flex-1">
-                          <div className="text-xs font-semibold text-stone-900 flex items-center gap-1.5">
-                            {subItem.label}
-                            <span className="text-[10px] text-stone-400 font-normal">
-                              {subItem.jpLabel}
-                            </span>
-                          </div>
-                          <p className="text-[11px] text-stone-500 truncate mt-0.5">
-                            {subItem.description}
-                          </p>
-                        </div>
-                      </Link>
-                    );
-                  })}
-                </div>
+                  aria-label="Đóng"
+                  className="p-1 rounded-md text-stone-400 hover:text-stone-600 hover:bg-stone-100"
+                >
+                  <X className="w-3.5 h-3.5" />
+                </button>
               </div>
-            </>
+              <div className="space-y-1">
+                {MORE_NAV_ITEMS.map((subItem) => {
+                  const SubIcon = subItem.icon;
+                  return (
+                    <Link
+                      key={subItem.href}
+                      href={subItem.href}
+                      onClick={() => setShowMoreMenu(false)}
+                      className="flex items-start gap-3 p-2.5 rounded-xl hover:bg-stone-50 transition-colors group"
+                    >
+                      <div className="p-2 rounded-lg bg-stone-100 text-stone-600 group-hover:bg-indigo-50 group-hover:text-indigo-600 transition-colors shrink-0">
+                        <SubIcon className="w-4 h-4" />
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <div className="text-xs font-semibold text-stone-900 flex items-center gap-1.5">
+                          {subItem.label}
+                          <span className="text-[10px] text-stone-400 font-normal">
+                            {subItem.jpLabel}
+                          </span>
+                        </div>
+                        <p className="text-[11px] text-stone-500 truncate mt-0.5">
+                          {subItem.description}
+                        </p>
+                      </div>
+                    </Link>
+                  );
+                })}
+              </div>
+            </div>
           )}
         </div>
       </aside>
@@ -247,11 +286,12 @@ export function IslandNavigation() {
         {/* Mobile More Button */}
         <button
           type="button"
-          onClick={() => setShowMoreMenu(!showMoreMenu)}
+          onClick={() => setShowMobileMore((prev) => !prev)}
           aria-label="Xem thêm các mục khác"
+          aria-expanded={showMobileMore}
           className={cn(
             'flex flex-col items-center justify-center flex-1 py-1 px-2 rounded-xl transition-all cursor-pointer',
-            showMoreMenu
+            showMobileMore
               ? 'text-indigo-600 font-semibold'
               : 'text-stone-500 hover:text-stone-900 active:bg-stone-100'
           )}
@@ -264,33 +304,40 @@ export function IslandNavigation() {
       </nav>
 
       {/* Mobile More Sheet / Dialog */}
-      {showMoreMenu && (
-        <div className="fixed inset-0 z-50 md:hidden flex flex-col justify-end">
+      {showMobileMore && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-label="Tất cả tính năng học tập"
+          className="fixed inset-0 z-50 md:hidden flex flex-col justify-end"
+        >
           <div
             className="fixed inset-0 bg-stone-900/40 backdrop-blur-sm"
-            onClick={() => setShowMoreMenu(false)}
+            onClick={() => setShowMobileMore(false)}
           />
-          <div className="relative z-10 p-5 rounded-t-3xl bg-white border-t border-stone-200 shadow-2xl max-h-[80vh] overflow-y-auto animate-in slide-in-from-bottom duration-200">
+          <div className="relative z-10 p-5 pb-[calc(1.5rem+env(safe-area-inset-bottom))] rounded-t-3xl bg-white border-t border-stone-200 shadow-2xl max-h-[85dvh] overflow-y-auto animate-in slide-in-from-bottom duration-200">
             <div className="flex items-center justify-between pb-3 mb-3 border-b border-stone-100">
               <h3 className="text-sm font-semibold text-stone-900">
                 Tất cả tính năng học tập
               </h3>
               <button
-                onClick={() => setShowMoreMenu(false)}
+                type="button"
+                onClick={() => setShowMobileMore(false)}
+                aria-label="Đóng"
                 className="p-1.5 rounded-lg text-stone-400 hover:text-stone-600 hover:bg-stone-100"
               >
                 <X className="w-4 h-4" />
               </button>
             </div>
 
-            <div className="grid grid-cols-1 gap-2 pb-6">
+            <div className="grid grid-cols-1 gap-2">
               {MORE_NAV_ITEMS.map((subItem) => {
                 const SubIcon = subItem.icon;
                 return (
                   <Link
                     key={subItem.href}
                     href={subItem.href}
-                    onClick={() => setShowMoreMenu(false)}
+                    onClick={() => setShowMobileMore(false)}
                     className="flex items-center gap-3.5 p-3 rounded-xl hover:bg-stone-50 active:bg-stone-100 transition-colors border border-stone-100"
                   >
                     <div className="p-2.5 rounded-xl bg-indigo-50 text-indigo-600 shrink-0">

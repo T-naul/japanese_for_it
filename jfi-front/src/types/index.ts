@@ -20,19 +20,19 @@ export type VerbFormType =
   | 'jiouken';
 
 export const VERB_FORM_LABELS: Record<VerbFormType, string> = {
-  suru: '辞書 (Thể nguyên thể / Từ điển)',
-  masu: 'ます形 (Thể Masu / Lịch sự)',
-  nai: 'ない形 (Thể Nai / Phủ định)',
-  ta: 'た形 (Thể Ta / Quá khứ)',
-  te: 'て形 (Thể Te)',
-  kano: '可能形 (Thể khả năng)',
-  ukemi: '受身形 (Thể bị động)',
-  shieki: '使役形 (Thể sai khiến)',
-  shieki_ukemi: '使役受身形 (Thể sai khiến bị động)',
-  meirei: '命令形 (Thể mệnh lệnh)',
-  ikou: '意向形 (Thể ý hướng)',
-  kenshi: '禁止形 (Thể cấm chỉ)',
-  jiouken: '条件形 (Thể điều kiện)',
+  suru: 'Thể từ điển',
+  masu: 'Thể lịch sự (masu)',
+  nai: 'Thể phủ định (nai)',
+  ta: 'Thể quá khứ (ta)',
+  te: 'Thể nối (te)',
+  kano: 'Thể khả năng',
+  ukemi: 'Thể bị động',
+  shieki: 'Thể sai khiến',
+  shieki_ukemi: 'Thể sai khiến bị động',
+  meirei: 'Thể mệnh lệnh',
+  ikou: 'Thể ý chí',
+  kenshi: 'Thể cấm đoán',
+  jiouken: 'Thể điều kiện',
 };
 
 export const WORD_TYPE_LABELS: Record<WordType, string> = {
@@ -218,5 +218,191 @@ export interface TodayStudyState {
   day?: StudyPlanDay;
   progress?: StudyPlanDayProgress;
   isToday: boolean;
+}
+
+// ---------------- Learning Materials Types ----------------
+export type MaterialStatusType = 'uploaded' | 'processing' | 'ready' | 'failed';
+
+export interface LearningMaterial {
+  id: string;
+  title: string;
+  description: string;
+  material_type: string;
+  level: JLPTLevel | string;
+  language: string;
+  file_size?: number;
+  page_count?: number;
+  status: MaterialStatusType;
+  metadata?: Record<string, unknown>;
+  file_url?: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface MaterialLesson {
+  id: string;
+  title: string;
+  lesson_number: number;
+  description?: string;
+  page_start?: number;
+  page_end?: number;
+  is_completed?: boolean;
+  content?: string;
+  metadata?: Record<string, unknown>;
+  sections_count?: number;
+}
+
+export type SectionType =
+  | 'text'
+  | 'vocabulary'
+  | 'grammar'
+  | 'dialogue'
+  | 'reading'
+  | 'exercise'
+  | 'explanation'
+  | 'note'
+  | 'table'
+  | 'image'
+  | string;
+
+export interface MaterialSection {
+  id: string;
+  title: string;
+  section_type: SectionType;
+  order: number;
+  page_start?: number;
+  page_end?: number;
+  content: string;
+  data?: Record<string, unknown>;
+  vocabulary?: {
+    id: string;
+    kanji: string;
+    hiragana: string;
+    meaning: string;
+    level: string;
+  } | null;
+  grammar?: {
+    id: string;
+    pattern: string;
+    meaning: string;
+    level: string;
+  } | null;
+}
+
+export interface UserMaterialLesson {
+  id: string;
+  lesson_id: string;
+  lesson_number: number;
+  title: string;
+  completed: boolean;
+  started_at?: string;
+  completed_at?: string | null;
+}
+
+export interface UserMaterial {
+  id: string;
+  material: LearningMaterial;
+  status: string;
+  progress: number;
+  completed_lessons: number;
+  total_lessons: number;
+  started_at?: string;
+  completed_at?: string | null;
+}
+
+export interface UserMaterialDetail extends UserMaterial {
+  lessons: UserMaterialLesson[];
+}
+
+export interface LessonCompletionResult {
+  lesson_id: string;
+  completed: boolean;
+  completed_at: string | null;
+  material_progress: number;
+  material_status: string;
+}
+
+// ---------------- Shadowing Types ----------------
+export type ShadowingVideoStatusType = 'uploaded' | 'processing' | 'ready' | 'failed';
+
+export interface ShadowingSegment {
+  id: string;
+  sequence: number;
+  start_time: number;
+  end_time: number;
+  text: string;
+  reading?: string;
+  speaker?: string;
+  metadata?: Record<string, unknown>;
+}
+
+export interface ShadowingVideo {
+  id: string;
+  title: string;
+  description: string;
+  level: JLPTLevel | string;
+  language: string;
+  duration_seconds?: number;
+  file_size?: number;
+  status: ShadowingVideoStatusType;
+  metadata?: Record<string, unknown>;
+  video_url?: string | null;
+  audio_url?: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface UserShadowingSegment {
+  id: string;
+  sequence: number;
+  text: string;
+  reading?: string;
+  speaker?: string;
+  start_time: number;
+  end_time: number;
+  start_seconds: number;
+  end_seconds: number;
+  is_completed: boolean;
+  completed_at?: string | null;
+}
+
+export interface UserShadowingVideo {
+  id: string;
+  video_id: string;
+  title: string;
+  level: string;
+  language: string;
+  video?: ShadowingVideo;
+  status: string;
+  completed_segments: number;
+  total_segments: number;
+  percentage: number;
+  started_at?: string;
+  completed_at?: string | null;
+}
+
+export interface UserShadowingDetail {
+  id: string;
+  video: ShadowingVideo;
+  status: string;
+  progress: {
+    completed_segments: number;
+    total_segments: number;
+    percentage: number;
+    completed: boolean;
+  };
+  segments: UserShadowingSegment[];
+  started_at?: string;
+  completed_at?: string | null;
+}
+
+export interface SegmentCompletionResult {
+  segment_id: string;
+  completed: boolean;
+  completed_at: string | null;
+  completed_segments: number;
+  total_segments: number;
+  percentage: number;
+  video_status: string;
 }
 

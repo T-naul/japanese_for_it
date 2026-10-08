@@ -17,6 +17,17 @@ import {
   StudyPlanDayProgress,
   ReviewAvailableSummary,
   TodayStudyState,
+  LearningMaterial,
+  MaterialLesson,
+  MaterialSection,
+  UserMaterial,
+  UserMaterialDetail,
+  LessonCompletionResult,
+  ShadowingVideo,
+  ShadowingSegment,
+  UserShadowingVideo,
+  UserShadowingDetail,
+  SegmentCompletionResult,
 } from '@/types';
 
 export const API_BASE_URL =
@@ -319,13 +330,130 @@ export const reviewApi = {
   },
 };
 
-// ---------------- My Materials & Shadowing API ----------------
-export const userMaterialsApi = {
-  getMyMaterials: async (): Promise<any> => {
+// ---------------- Materials API ----------------
+export const materialsApi = {
+  getMaterials: async (params?: { level?: string; search?: string }): Promise<LearningMaterial[]> => {
+    const token = authStorage.getAccessToken();
+    const config: any = { timeout: 10000, params: {} };
+    if (token) config.headers = { Authorization: `Bearer ${token}` };
+    if (params?.level && params.level !== 'ALL') config.params.level = params.level;
+    if (params?.search) config.params.search = params.search;
+
+    try {
+      const res = await axios.get<LearningMaterial[] | { results: LearningMaterial[] }>(
+        `${BACKEND_ROOT_URL}/api/materials/`,
+        config
+      );
+      if (Array.isArray(res.data)) return res.data;
+      if (res.data && 'results' in res.data && Array.isArray(res.data.results)) {
+        return res.data.results;
+      }
+      return [];
+    } catch {
+      return [];
+    }
+  },
+
+  getMaterial: async (id: string): Promise<LearningMaterial | null> => {
+    const token = authStorage.getAccessToken();
+    const config: any = { timeout: 10000 };
+    if (token) config.headers = { Authorization: `Bearer ${token}` };
+    try {
+      const res = await axios.get<LearningMaterial>(`${BACKEND_ROOT_URL}/api/materials/${id}/`, config);
+      return res.data;
+    } catch {
+      return null;
+    }
+  },
+
+  getLessons: async (materialId: string): Promise<MaterialLesson[]> => {
+    const token = authStorage.getAccessToken();
+    const config: any = { timeout: 10000 };
+    if (token) config.headers = { Authorization: `Bearer ${token}` };
+    try {
+      const res = await axios.get<MaterialLesson[]>(
+        `${BACKEND_ROOT_URL}/api/materials/${materialId}/lessons/`,
+        config
+      );
+      return Array.isArray(res.data) ? res.data : [];
+    } catch {
+      return [];
+    }
+  },
+
+  getLessonDetail: async (materialId: string, lessonId: string): Promise<MaterialLesson | null> => {
+    const token = authStorage.getAccessToken();
+    const config: any = { timeout: 10000 };
+    if (token) config.headers = { Authorization: `Bearer ${token}` };
+    try {
+      const res = await axios.get<MaterialLesson>(
+        `${BACKEND_ROOT_URL}/api/materials/${materialId}/lessons/${lessonId}/`,
+        config
+      );
+      return res.data;
+    } catch {
+      return null;
+    }
+  },
+
+  getLessonSections: async (materialId: string, lessonId: string): Promise<MaterialSection[]> => {
+    const token = authStorage.getAccessToken();
+    const config: any = { timeout: 10000 };
+    if (token) config.headers = { Authorization: `Bearer ${token}` };
+    try {
+      const res = await axios.get<MaterialSection[]>(
+        `${BACKEND_ROOT_URL}/api/materials/${materialId}/lessons/${lessonId}/sections/`,
+        config
+      );
+      return Array.isArray(res.data) ? res.data : [];
+    } catch {
+      return [];
+    }
+  },
+
+  enroll: async (materialId: string): Promise<{ enrolled: boolean; material_id: string; status: string } | null> => {
     const token = authStorage.getAccessToken();
     if (!token) return null;
     try {
-      const res = await axios.get(`${BACKEND_ROOT_URL}/api/my/materials/`, {
+      const res = await axios.post(
+        `${BACKEND_ROOT_URL}/api/materials/${materialId}/enroll/`,
+        {},
+        { headers: { Authorization: `Bearer ${token}` }, timeout: 10000 }
+      );
+      return res.data;
+    } catch {
+      return null;
+    }
+  },
+};
+
+export const userMaterialsApi = {
+  getMyMaterials: async (): Promise<UserMaterial[]> => {
+    const token = authStorage.getAccessToken();
+    if (!token) return [];
+    try {
+      const res = await axios.get<UserMaterial[] | { results: UserMaterial[] }>(
+        `${BACKEND_ROOT_URL}/api/my/materials/`,
+        {
+          headers: { Authorization: `Bearer ${token}` },
+          timeout: 10000,
+        }
+      );
+      if (Array.isArray(res.data)) return res.data;
+      if (res.data && 'results' in res.data && Array.isArray(res.data.results)) {
+        return res.data.results;
+      }
+      return [];
+    } catch {
+      return [];
+    }
+  },
+
+  getMyMaterial: async (materialId: string): Promise<UserMaterialDetail | null> => {
+    const token = authStorage.getAccessToken();
+    if (!token) return null;
+    try {
+      const res = await axios.get<UserMaterialDetail>(`${BACKEND_ROOT_URL}/api/my/materials/${materialId}/`, {
         headers: { Authorization: `Bearer ${token}` },
         timeout: 10000,
       });
@@ -334,17 +462,141 @@ export const userMaterialsApi = {
       return null;
     }
   },
-};
 
-export const userShadowingApi = {
-  getMyShadowing: async (): Promise<any> => {
+  completeLesson: async (materialId: string, lessonId: string): Promise<LessonCompletionResult | null> => {
     const token = authStorage.getAccessToken();
     if (!token) return null;
     try {
-      const res = await axios.get(`${BACKEND_ROOT_URL}/api/my/shadowing/`, {
+      const res = await axios.post<LessonCompletionResult>(
+        `${BACKEND_ROOT_URL}/api/my/materials/${materialId}/lessons/${lessonId}/complete/`,
+        {},
+        {
+          headers: { Authorization: `Bearer ${token}` },
+          timeout: 10000,
+        }
+      );
+      return res.data;
+    } catch {
+      return null;
+    }
+  },
+};
+
+// ---------------- Shadowing API ----------------
+export const shadowingApi = {
+  getVideos: async (params?: { level?: string; search?: string }): Promise<ShadowingVideo[]> => {
+    const token = authStorage.getAccessToken();
+    const config: any = { timeout: 10000, params: {} };
+    if (token) config.headers = { Authorization: `Bearer ${token}` };
+    if (params?.level && params.level !== 'ALL') config.params.level = params.level;
+    if (params?.search) config.params.search = params.search;
+
+    try {
+      const res = await axios.get<ShadowingVideo[] | { results: ShadowingVideo[] }>(
+        `${BACKEND_ROOT_URL}/api/shadowing/videos/`,
+        config
+      );
+      if (Array.isArray(res.data)) return res.data;
+      if (res.data && 'results' in res.data && Array.isArray(res.data.results)) {
+        return res.data.results;
+      }
+      return [];
+    } catch {
+      return [];
+    }
+  },
+
+  getVideo: async (id: string): Promise<ShadowingVideo | null> => {
+    const token = authStorage.getAccessToken();
+    const config: any = { timeout: 10000 };
+    if (token) config.headers = { Authorization: `Bearer ${token}` };
+    try {
+      const res = await axios.get<ShadowingVideo>(`${BACKEND_ROOT_URL}/api/shadowing/videos/${id}/`, config);
+      return res.data;
+    } catch {
+      return null;
+    }
+  },
+
+  getVideoSegments: async (videoId: string): Promise<ShadowingSegment[]> => {
+    const token = authStorage.getAccessToken();
+    const config: any = { timeout: 10000 };
+    if (token) config.headers = { Authorization: `Bearer ${token}` };
+    try {
+      const res = await axios.get<ShadowingSegment[]>(
+        `${BACKEND_ROOT_URL}/api/shadowing/videos/${videoId}/segments/`,
+        config
+      );
+      return Array.isArray(res.data) ? res.data : [];
+    } catch {
+      return [];
+    }
+  },
+
+  enroll: async (videoId: string): Promise<{ enrolled: boolean; video_id: string; status: string } | null> => {
+    const token = authStorage.getAccessToken();
+    if (!token) return null;
+    try {
+      const res = await axios.post(
+        `${BACKEND_ROOT_URL}/api/shadowing/videos/${videoId}/enroll/`,
+        {},
+        { headers: { Authorization: `Bearer ${token}` }, timeout: 10000 }
+      );
+      return res.data;
+    } catch {
+      return null;
+    }
+  },
+};
+
+export const userShadowingApi = {
+  getMyShadowing: async (): Promise<UserShadowingVideo[]> => {
+    const token = authStorage.getAccessToken();
+    if (!token) return [];
+    try {
+      const res = await axios.get<UserShadowingVideo[] | { results: UserShadowingVideo[] }>(
+        `${BACKEND_ROOT_URL}/api/my/shadowing/`,
+        {
+          headers: { Authorization: `Bearer ${token}` },
+          timeout: 10000,
+        }
+      );
+      if (Array.isArray(res.data)) return res.data;
+      if (res.data && 'results' in res.data && Array.isArray(res.data.results)) {
+        return res.data.results;
+      }
+      return [];
+    } catch {
+      return [];
+    }
+  },
+
+  getMyShadowingVideo: async (videoId: string): Promise<UserShadowingDetail | null> => {
+    const token = authStorage.getAccessToken();
+    if (!token) return null;
+    try {
+      const res = await axios.get<UserShadowingDetail>(`${BACKEND_ROOT_URL}/api/my/shadowing/${videoId}/`, {
         headers: { Authorization: `Bearer ${token}` },
         timeout: 10000,
       });
+      return res.data;
+    } catch {
+      return null;
+    }
+  },
+
+  completeSegment: async (videoId: string, segmentId: string): Promise<SegmentCompletionResult | null> => {
+    const token = authStorage.getAccessToken();
+    if (!token) return null;
+    try {
+      const res = await axios.post<SegmentCompletionResult>(
+        `${BACKEND_ROOT_URL}/api/my/shadowing/${videoId}/segments/${segmentId}/complete/`,
+        {},
+        {
+          headers: { Authorization: `Bearer ${token}` },
+          timeout: 10000,
+        }
+      );
       return res.data;
     } catch {
       return null;

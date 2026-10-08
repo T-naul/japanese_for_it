@@ -67,23 +67,11 @@ export default function HomePage() {
       }
 
       if (shadowingResult.status === 'fulfilled' && shadowingResult.value) {
-        const data = shadowingResult.value;
-        const count = Array.isArray(data)
-          ? data.length
-          : data?.results && Array.isArray(data.results)
-            ? data.results.length
-            : 0;
-        setShadowingCount(count);
+        setShadowingCount(Array.isArray(shadowingResult.value) ? shadowingResult.value.length : 0);
       }
 
       if (materialsResult.status === 'fulfilled' && materialsResult.value) {
-        const data = materialsResult.value;
-        const count = Array.isArray(data)
-          ? data.length
-          : data?.results && Array.isArray(data.results)
-            ? data.results.length
-            : 0;
-        setMaterialsCount(count);
+        setMaterialsCount(Array.isArray(materialsResult.value) ? materialsResult.value.length : 0);
       }
     } catch (err: unknown) {
       console.error('Failed to load home page data:', err);

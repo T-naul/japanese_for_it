@@ -61,10 +61,10 @@ export function TodayStudyCard({ studyState, isLoading }: TodayStudyCardProps) {
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
               <h2 className="text-xl sm:text-2xl font-bold text-stone-900 tracking-tight">
-                今日の学習
+                Bài học hôm nay
               </h2>
               <p className="text-xs text-stone-500 mt-0.5">
-                本日の学習目標と進捗
+                Mục tiêu và tiến độ học tập hôm nay
               </p>
             </div>
 
@@ -89,10 +89,10 @@ export function TodayStudyCard({ studyState, isLoading }: TodayStudyCardProps) {
             </div>
             <div className="space-y-1">
               <h3 className="text-sm font-bold text-stone-900">
-                本日の割り当てはありません
+                Hôm nay chưa có nội dung được giao
               </h3>
               <p className="text-xs text-stone-500 leading-relaxed">
-                この日は新しい単語・文法の新規割り当てがありません。これまでに学んだ内容の復習や、Shadowing動画での練習を進めましょう。
+                Hôm nay chưa có từ vựng hoặc ngữ pháp mới. Bạn có thể ôn lại nội dung đã học hoặc luyện nhại theo video.
               </p>
             </div>
           </div>
@@ -100,7 +100,7 @@ export function TodayStudyCard({ studyState, isLoading }: TodayStudyCardProps) {
 
         <CardFooter className="pt-3 pb-4 px-6 border-t border-stone-100/90 bg-stone-50/40 flex items-center justify-between gap-4">
           <span className="text-xs text-stone-500 truncate hidden sm:block">
-            計画全体のスケジュールや他日程の内容を確認できます
+            Xem lịch trình tổng thể và nội dung học của những ngày khác.
           </span>
           <Button
             asChild
@@ -109,7 +109,7 @@ export function TodayStudyCard({ studyState, isLoading }: TodayStudyCardProps) {
             className="w-full sm:w-auto font-medium gap-1.5 border-stone-200 hover:bg-stone-100 ml-auto"
           >
             <Link href={studyDayHref}>
-              <span>学習計画を見る</span>
+              <span>Xem lộ trình học</span>
               <ArrowRight className="w-3.5 h-3.5" />
             </Link>
           </Button>
@@ -125,10 +125,10 @@ export function TodayStudyCard({ studyState, isLoading }: TodayStudyCardProps) {
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
             <h2 className="text-xl sm:text-2xl font-bold text-stone-900 tracking-tight">
-              今日の学習
+              Bài học hôm nay
             </h2>
             <p className="text-xs text-stone-500 mt-0.5">
-              本日の学習目標と進捗
+              Mục tiêu và tiến độ học tập hôm nay
             </p>
           </div>
 
@@ -151,12 +151,12 @@ export function TodayStudyCard({ studyState, isLoading }: TodayStudyCardProps) {
         <div className="space-y-2">
           <div className="flex items-center justify-between text-xs sm:text-sm">
             <div className="flex items-center gap-1.5 font-medium text-stone-600">
-              <span>進捗:</span>
+              <span>Tiến độ:</span>
               <strong className="text-stone-900 font-bold text-sm sm:text-base">
                 {learnedItems}
               </strong>
               <span className="text-stone-400">/</span>
-              <span>{totalItems} 項目</span>
+              <span>{totalItems} mục</span>
             </div>
 
             <div className="flex items-center gap-2">
@@ -167,16 +167,16 @@ export function TodayStudyCard({ studyState, isLoading }: TodayStudyCardProps) {
               {isCompleted ? (
                 <Badge variant="success" className="gap-1 text-[11px] font-medium py-0 px-2">
                   <CheckCircle2 className="w-3 h-3" />
-                  <span>完了</span>
+                  <span>Hoàn thành</span>
                 </Badge>
               ) : learnedItems > 0 ? (
                 <Badge variant="subtle" className="gap-1 text-[11px] font-medium py-0 px-2">
                   <Clock className="w-3 h-3" />
-                  <span>学習中</span>
+                  <span>Đang học</span>
                 </Badge>
               ) : (
                 <Badge variant="secondary" className="text-[11px] font-medium py-0 px-2 text-stone-500">
-                  <span>未着手</span>
+                  <span>Chưa bắt đầu</span>
                 </Badge>
               )}
             </div>
@@ -190,13 +190,13 @@ export function TodayStudyCard({ studyState, isLoading }: TodayStudyCardProps) {
       <CardFooter className="pt-3 pb-4 px-6 border-t border-stone-100/90 bg-stone-50/40 flex items-center justify-between gap-4">
         <div className="text-xs text-stone-500 truncate hidden sm:block">
           {isCompleted
-            ? '本日の学習目標を達成しました。'
-            : '本日の割り当て内容を学習しましょう。'}
+            ? 'Bạn đã hoàn thành mục tiêu học tập hôm nay.'
+            : 'Hãy bắt đầu học nội dung được giao hôm nay.'}
         </div>
 
         <Button asChild size="default" className="w-full sm:w-auto font-semibold px-5 gap-2 ml-auto shadow-xs">
           <Link href={studyDayHref}>
-            <span>{isCompleted ? '学習内容を確認' : '学習を続ける'}</span>
+            <span>{isCompleted ? 'Xem lại nội dung' : 'Tiếp tục học'}</span>
             <ArrowRight className="w-4 h-4" />
           </Link>
         </Button>
